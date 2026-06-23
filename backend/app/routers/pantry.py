@@ -4,15 +4,17 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
-from ..db import get_session
-from ..models import PantryItem, ConsumptionLog, User
 from ..auth import get_current_user
+from ..db import get_session
+from ..models import ConsumptionLog, PantryItem, User
 from ..schemas import (
-    DodajProduktRequest,
-    AktualizujProduktRequest,
-    ProduktResponse,
     AkcjaProduktRequest,
+    AktualizujProduktRequest,
+    DodajProduktRequest,
+    ProduktResponse,
 )
+from ..services.ml.features import SHELF_LIFE_DNI
+from ..services.ml.predict import przewiduj_ryzyko
 
 router = APIRouter(prefix="/api/spizarnia", tags=["spizarnia"])
 
@@ -24,8 +26,17 @@ def _dni_do_konca(expires_at: Optional[datetime]) -> Optional[int]:
 
 
 def _to_response(item: PantryItem) -> ProduktResponse:
+    dni = _dni_do_konca(item.expires_at)
     r = ProduktResponse.from_orm(item)
-    r.days_left = _dni_do_konca(item.expires_at)
+    r.days_left = dni
+    if item.status == "active":
+        sl = SHELF_LIFE_DNI.get(item.category, 7)
+        r.risk_score = przewiduj_ryzyko(
+            kategoria=item.category,
+            dni_do_konca=float(dni) if dni is not None else None,
+            shelf_life_dni=sl,
+            ilosc_znorm=min(1.0, item.quantity / 5.0),
+        )
     return r
 
 
@@ -40,7 +51,14 @@ def lista_produktow(
         query = query.where(PantryItem.status == status)
     items = session.exec(query).all()
     result = [_to_response(item) for item in items]
-    result.sort(key=lambda x: (x.days_left is None, x.days_left if x.days_left is not None else 9999))
+    # Sortuj: najpierw wg ryzyka (malejąco), potem wg dni do końca
+    result.sort(
+        key=lambda x: (
+            x.days_left is None,
+            x.days_left if x.days_left is not None else 9999,
+            -(x.risk_score or 0),
+        )
+    )
     return result
 
 
@@ -72,8 +90,7 @@ def pobierz_produkt(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    item = _get_or_404(item_id, current_user.id, session)
-    return _to_response(item)
+    return _to_response(_get_or_404(item_id, current_user.id, session))
 
 
 @router.patch("/{item_id}", response_model=ProduktResponse)
@@ -109,7 +126,7 @@ def akcja_produktu(
 ):
     item = _get_or_404(item_id, current_user.id, session)
     if dane.action not in ("eaten", "wasted", "shared"):
-        raise HTTPException(status_code=400, detail="Nieznana akcja. Dozwolone: eaten, wasted, shared")
+        raise HTTPException(status_code=400, detail="Dozwolone akcje: eaten, wasted, shared")
 
     if dane.action in ("eaten", "wasted"):
         log = ConsumptionLog(
@@ -136,8 +153,7 @@ def usun_produkt(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    item = _get_or_404(item_id, current_user.id, session)
-    session.delete(item)
+    session.delete(_get_or_404(item_id, current_user.id, session))
     session.commit()
 
 

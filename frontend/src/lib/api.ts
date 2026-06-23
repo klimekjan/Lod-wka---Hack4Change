@@ -79,6 +79,7 @@ export interface Ogloszenie {
   expires_at?: string
   created_at: string
   kontakt_email?: string
+  reserved_by?: number
 }
 
 // Auth
@@ -127,6 +128,7 @@ export const dashboard = {
 
 export const spolecznosc = {
   lista: (miasto?: string) => api.get<Ogloszenie[]>('/spolecznosc', { params: miasto ? { miasto } : {} }),
+  moje: () => api.get<Ogloszenie[]>('/spolecznosc/moje'),
   dodaj: (dane: { item_name: string; quantity: number; unit: string; city: string; expires_at?: string }) =>
     api.post<Ogloszenie>('/spolecznosc', dane),
   zarezerwuj: (id: number) => api.post<Ogloszenie>(`/spolecznosc/${id}/zarezerwuj`),

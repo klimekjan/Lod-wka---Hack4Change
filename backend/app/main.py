@@ -14,12 +14,14 @@ from .routers import auth, pantry, notifications, dashboard, community, produkty
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    from .services.ml.predict import init_models
+    init_models()
     from .scheduler import start_scheduler
     start_scheduler()
     yield
 
 
-app = FastAPI(title="Lodówka API", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="Lodówka API", version="0.3.0", lifespan=lifespan)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
@@ -43,4 +45,4 @@ app.include_router(recipes.router)
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": "0.2.0"}
+    return {"status": "ok", "version": "0.3.0"}

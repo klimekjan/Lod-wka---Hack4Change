@@ -8,7 +8,9 @@ venv/
 dist/
 build/
 lodowka.db
-backend/models/*.joblib
+backend/data/training_data.csv
+# modele są commitowane celowo (demo bez trenowania)
+
 
 # Node
 node_modules/
