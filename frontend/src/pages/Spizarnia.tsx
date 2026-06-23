@@ -1,66 +1,106 @@
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { spizarnia, Produkt } from '../lib/api'
+import BarcodeScanner from '../components/BarcodeScanner'
 
-const KATEGORIE = ['nabiał', 'mięso surowe', 'ryby', 'warzywa liściaste', 'warzywa twarde', 'owoce', 'pieczywo', 'jajka', 'napoje', 'przetwory', 'inne']
+const KATEGORIE = [
+  'nabiał', 'mięso surowe', 'ryby', 'warzywa liściaste',
+  'warzywa twarde', 'owoce', 'pieczywo', 'jajka', 'napoje', 'przetwory', 'inne',
+]
 const JEDNOSTKI = ['szt.', 'kg', 'g', 'l', 'ml', 'opak.']
 
-function badgeStatus(dniDo?: number) {
+function StatusBadge({ dniDo }: { dniDo?: number | null }) {
   if (dniDo === undefined || dniDo === null) return null
   if (dniDo < 0) return <span className="badge-przeterminowany">przeterminowany</span>
-  if (dniDo <= 3) return <span className="badge-wylot">{dniDo === 0 ? 'dziś' : `${dniDo} dni`}</span>
+  if (dniDo === 0) return <span className="badge-wylot">dziś</span>
+  if (dniDo <= 3) return <span className="badge-wylot">{dniDo} {dniDo === 1 ? 'dzień' : 'dni'}</span>
   return <span className="badge-swiezy">{dniDo} dni</span>
 }
 
-function KartaProduktu({ produkt, onAkcja }: { produkt: Produkt; onAkcja: (action: string) => void }) {
-  const [rozwiniety, setRozwiniety] = useState(false)
+function borderKolor(dniDo?: number | null) {
+  if (dniDo === undefined || dniDo === null) return 'border-slate-200'
+  if (dniDo < 0) return 'border-red-400'
+  if (dniDo <= 3) return 'border-bursztyn-400'
+  return 'border-zielony-400'
+}
+
+function KartaProduktu({
+  produkt,
+  onAkcja,
+}: {
+  produkt: Produkt
+  onAkcja: (action: string) => void
+}) {
+  const [otwarty, setOtwarty] = useState(false)
 
   return (
-    <div className={`karta border-l-4 ${
-      produkt.days_left === undefined || produkt.days_left === null
-        ? 'border-slate-200'
-        : produkt.days_left < 0
-          ? 'border-red-400'
-          : produkt.days_left <= 3
-            ? 'border-bursztyn-400'
-            : 'border-zielony-400'
-    }`}>
-      <div className="flex items-start justify-between gap-2">
+    <div className={`karta border-l-4 ${borderKolor(produkt.days_left)}`}>
+      <div className="flex items-start justify-between gap-3">
+        {produkt.image_url && (
+          <img
+            src={produkt.image_url}
+            alt={produkt.name}
+            className="w-10 h-10 object-contain rounded shrink-0"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-slate-900 truncate">{produkt.name}</span>
-            {badgeStatus(produkt.days_left)}
+            <StatusBadge dniDo={produkt.days_left} />
           </div>
           <p className="text-sm text-slate-500 mt-0.5">
-            {produkt.quantity} {produkt.unit} · {produkt.category}
+            {produkt.quantity} {produkt.unit}
+            {produkt.category !== 'inne' && ` · ${produkt.category}`}
           </p>
         </div>
         <button
-          onClick={() => setRozwiniety(r => !r)}
-          className="text-slate-400 hover:text-slate-600 text-lg leading-none p-1 shrink-0"
+          onClick={() => setOtwarty(o => !o)}
+          className="shrink-0 text-slate-400 hover:text-slate-700 font-bold text-lg leading-none px-1"
+          aria-label="Opcje"
         >
-          {rozwiniety ? '−' : '···'}
+          {otwarty ? '−' : '···'}
         </button>
       </div>
-      {rozwiniety && (
+      {otwarty && (
         <div className="mt-3 pt-3 border-t border-slate-100 flex gap-2 flex-wrap">
-          <button className="btn-primary text-sm py-1" onClick={() => onAkcja('eaten')}>Zjedzone</button>
-          <button className="btn-secondary text-sm py-1" onClick={() => onAkcja('wasted')}>Wyrzucone</button>
-          <button className="btn-secondary text-sm py-1" onClick={() => onAkcja('shared')}>Oddaj</button>
+          <button className="btn-primary text-sm py-1.5 px-3" onClick={() => onAkcja('eaten')}>
+            Zjedzone
+          </button>
+          <button className="btn-secondary text-sm py-1.5 px-3" onClick={() => onAkcja('wasted')}>
+            Wyrzucone
+          </button>
+          <button className="btn-secondary text-sm py-1.5 px-3" onClick={() => onAkcja('shared')}>
+            Oddaj
+          </button>
         </div>
       )}
     </div>
   )
 }
 
+interface FormState {
+  name: string
+  category: string
+  quantity: string
+  unit: string
+  expiresAt: string
+}
+
+const defaultForm: FormState = {
+  name: '',
+  category: 'inne',
+  quantity: '1',
+  unit: 'szt.',
+  expiresAt: '',
+}
+
 export default function Spizarnia() {
   const queryClient = useQueryClient()
   const [formularzOtwarty, setFormularzOtwarty] = useState(false)
-  const [name, setName] = useState('')
-  const [category, setCategory] = useState('inne')
-  const [quantity, setQuantity] = useState('1')
-  const [unit, setUnit] = useState('szt.')
-  const [expiresAt, setExpiresAt] = useState('')
+  const [skanerOtwarty, setSkanerOtwarty] = useState(false)
+  const [form, setForm] = useState<FormState>(defaultForm)
+  const [skanBlad, setSkanBlad] = useState('')
 
   const { data: produkty = [], isLoading, error } = useQuery({
     queryKey: ['spizarnia'],
@@ -71,7 +111,8 @@ export default function Spizarnia() {
     mutationFn: (dane: Partial<Produkt>) => spizarnia.dodaj(dane).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
-      resetFormularz()
+      setForm(defaultForm)
+      setFormularzOtwarty(false)
     },
   })
 
@@ -81,24 +122,48 @@ export default function Spizarnia() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['spizarnia'] }),
   })
 
-  function resetFormularz() {
-    setName('')
-    setCategory('inne')
-    setQuantity('1')
-    setUnit('szt.')
-    setExpiresAt('')
-    setFormularzOtwarty(false)
-  }
+  const handleScan = useCallback(async (barcode: string) => {
+    setSkanerOtwarty(false)
+    setSkanBlad('')
+    try {
+      const res = await spizarnia.skanuj(barcode)
+      const d = res.data
+      if (!d.found || !d.name) {
+        setSkanBlad(`Kod ${barcode} nie znaleziony w bazie. Wpisz ręcznie.`)
+        setFormularzOtwarty(true)
+        setForm(f => ({ ...f, name: '' }))
+        return
+      }
+      const expiresAt = d.default_shelf_days
+        ? new Date(Date.now() + d.default_shelf_days * 86400_000).toISOString().slice(0, 10)
+        : ''
+      setForm({
+        name: d.name,
+        category: d.category || 'inne',
+        quantity: '1',
+        unit: 'szt.',
+        expiresAt,
+      })
+      setFormularzOtwarty(true)
+    } catch {
+      setSkanBlad('Błąd połączenia podczas skanowania.')
+      setFormularzOtwarty(true)
+    }
+  }, [])
 
   function submit(e: FormEvent) {
     e.preventDefault()
     mutacjaDodaj.mutate({
-      name,
-      category,
-      quantity: parseFloat(quantity),
-      unit,
-      expires_at: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+      name: form.name,
+      category: form.category,
+      quantity: parseFloat(form.quantity),
+      unit: form.unit,
+      expires_at: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
     })
+  }
+
+  function setField<K extends keyof FormState>(key: K, val: FormState[K]) {
+    setForm(f => ({ ...f, [key]: val }))
   }
 
   const przeterminowane = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left < 0)
@@ -107,75 +172,128 @@ export default function Spizarnia() {
 
   return (
     <div className="space-y-4">
+      {skanerOtwarty && (
+        <BarcodeScanner onScan={handleScan} onClose={() => setSkanerOtwarty(false)} />
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-900">Spiżarnia</h1>
-        <button
-          className="btn-primary text-sm"
-          onClick={() => setFormularzOtwarty(f => !f)}
-        >
-          {formularzOtwarty ? 'Anuluj' : '+ Dodaj produkt'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="btn-secondary text-sm"
+            onClick={() => { setSkanBlad(''); setSkanerOtwarty(true) }}
+          >
+            Skanuj
+          </button>
+          <button
+            className="btn-primary text-sm"
+            onClick={() => { setForm(defaultForm); setSkanBlad(''); setFormularzOtwarty(f => !f) }}
+          >
+            {formularzOtwarty ? 'Anuluj' : '+ Dodaj'}
+          </button>
+        </div>
       </div>
+
+      {skanBlad && (
+        <div className="bg-bursztyn-50 border border-bursztyn-400 text-bursztyn-600 text-sm px-3 py-2 rounded-lg">
+          {skanBlad}
+        </div>
+      )}
 
       {formularzOtwarty && (
         <form onSubmit={submit} className="karta space-y-3">
-          <h2 className="font-medium text-slate-800">Nowy produkt</h2>
+          <h2 className="font-semibold text-slate-800">Nowy produkt</h2>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Nazwa</label>
-            <input className="input" value={name} onChange={e => setName(e.target.value)} required placeholder="np. Mleko 3,2%" />
+            <input
+              className="input"
+              value={form.name}
+              onChange={e => setField('name', e.target.value)}
+              required
+              placeholder="np. Mleko 3,2%"
+              autoFocus
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Ilość</label>
-              <input className="input" type="number" min="0.01" step="0.01" value={quantity} onChange={e => setQuantity(e.target.value)} required />
+              <input
+                className="input"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={form.quantity}
+                onChange={e => setField('quantity', e.target.value)}
+                required
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Jednostka</label>
-              <select className="input" value={unit} onChange={e => setUnit(e.target.value)}>
+              <select className="input" value={form.unit} onChange={e => setField('unit', e.target.value)}>
                 {JEDNOSTKI.map(j => <option key={j}>{j}</option>)}
               </select>
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Kategoria</label>
-            <select className="input" value={category} onChange={e => setCategory(e.target.value)}>
+            <select className="input" value={form.category} onChange={e => setField('category', e.target.value)}>
               {KATEGORIE.map(k => <option key={k}>{k}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Termin ważności <span className="text-slate-400 font-normal">(opcjonalnie)</span>
+              Termin ważności
+              <span className="text-slate-400 font-normal ml-1">(opcjonalnie)</span>
             </label>
-            <input className="input" type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
+            <input
+              className="input"
+              type="date"
+              value={form.expiresAt}
+              onChange={e => setField('expiresAt', e.target.value)}
+            />
           </div>
           {mutacjaDodaj.error && (
-            <p className="text-sm text-red-600">Błąd zapisu. Spróbuj ponownie.</p>
+            <p className="text-sm text-red-600">Błąd zapisu — spróbuj ponownie.</p>
           )}
           <div className="flex gap-2">
             <button type="submit" className="btn-primary" disabled={mutacjaDodaj.isPending}>
               {mutacjaDodaj.isPending ? 'Zapisuję...' : 'Dodaj'}
             </button>
-            <button type="button" className="btn-secondary" onClick={resetFormularz}>Anuluj</button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => { setForm(defaultForm); setFormularzOtwarty(false) }}
+            >
+              Anuluj
+            </button>
           </div>
         </form>
       )}
 
-      {isLoading && <p className="text-sm text-slate-500 text-center py-8">Ładowanie...</p>}
-      {error && <p className="text-sm text-red-600 text-center py-8">Błąd ładowania spiżarni</p>}
+      {isLoading && <p className="text-sm text-slate-500 text-center py-10">Ładowanie...</p>}
+      {error && <p className="text-sm text-red-600 text-center py-10">Błąd ładowania spiżarni</p>}
 
       {!isLoading && produkty.length === 0 && (
-        <div className="karta text-center py-10 text-slate-500">
-          <p className="font-medium">Spiżarnia jest pusta</p>
-          <p className="text-sm mt-1">Dodaj pierwsze produkty klikając przycisk powyżej</p>
+        <div className="karta text-center py-12">
+          <p className="font-medium text-slate-700">Spiżarnia jest pusta</p>
+          <p className="text-sm text-slate-400 mt-1">
+            Dodaj produkty ręcznie lub klikając "Skanuj"
+          </p>
         </div>
       )}
 
       {przeterminowane.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-red-600 uppercase tracking-wide mb-2">Przeterminowane</h2>
+          <h2 className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-2">
+            Przeterminowane ({przeterminowane.length})
+          </h2>
           <div className="space-y-2">
             {przeterminowane.map(p => (
-              <KartaProduktu key={p.id} produkt={p} onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })} />
+              <KartaProduktu
+                key={p.id}
+                produkt={p}
+                onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
+              />
             ))}
           </div>
         </section>
@@ -183,10 +301,16 @@ export default function Spizarnia() {
 
       {naWylocie.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-bursztyn-600 uppercase tracking-wide mb-2">Na wylocie</h2>
+          <h2 className="text-xs font-semibold text-bursztyn-600 uppercase tracking-widest mb-2">
+            Na wylocie ({naWylocie.length})
+          </h2>
           <div className="space-y-2">
             {naWylocie.map(p => (
-              <KartaProduktu key={p.id} produkt={p} onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })} />
+              <KartaProduktu
+                key={p.id}
+                produkt={p}
+                onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
+              />
             ))}
           </div>
         </section>
@@ -194,10 +318,16 @@ export default function Spizarnia() {
 
       {swieże.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Świeże</h2>
+          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">
+            Świeże ({swieże.length})
+          </h2>
           <div className="space-y-2">
             {swieże.map(p => (
-              <KartaProduktu key={p.id} produkt={p} onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })} />
+              <KartaProduktu
+                key={p.id}
+                produkt={p}
+                onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
+              />
             ))}
           </div>
         </section>

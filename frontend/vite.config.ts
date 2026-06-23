@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   resolve: {
@@ -10,8 +10,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png', 'favicon.ico'],
+      injectManifest: { swDest: 'dist/sw.js' },
       manifest: {
         name: 'Lodówka',
         short_name: 'Lodówka',
@@ -25,7 +28,10 @@ export default defineConfig({
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
         ],
       },
-      devOptions: { enabled: true },
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
     }),
   ],
   server: {
