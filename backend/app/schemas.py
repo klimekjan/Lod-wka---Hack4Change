@@ -1,0 +1,144 @@
+from datetime import datetime
+from typing import Optional, List
+from pydantic import BaseModel, EmailStr
+
+
+# --- Auth ---
+
+class RejestrujRequest(BaseModel):
+    email: EmailStr
+    haslo: str
+    miasto: Optional[str] = None
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    miasto: Optional[str]
+    notify_push: bool
+    notify_email: bool
+    notify_days_before: int
+    notify_hour: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UstawieniaRequest(BaseModel):
+    miasto: Optional[str] = None
+    notify_push: Optional[bool] = None
+    notify_email: Optional[bool] = None
+    notify_days_before: Optional[int] = None
+    notify_hour: Optional[int] = None
+
+
+# --- Spizarnia ---
+
+class DodajProduktRequest(BaseModel):
+    name: str
+    category: str = "inne"
+    quantity: float = 1.0
+    unit: str = "szt."
+    barcode: Optional[str] = None
+    image_url: Optional[str] = None
+    expires_at: Optional[datetime] = None
+
+
+class AktualizujProduktRequest(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    quantity: Optional[float] = None
+    unit: Optional[str] = None
+    expires_at: Optional[datetime] = None
+
+
+class ProduktResponse(BaseModel):
+    id: int
+    user_id: int
+    name: str
+    category: str
+    quantity: float
+    unit: str
+    barcode: Optional[str]
+    image_url: Optional[str]
+    added_at: datetime
+    expires_at: Optional[datetime]
+    status: str
+    days_left: Optional[int] = None
+    risk_score: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AkcjaProduktRequest(BaseModel):
+    action: str  # eaten | wasted | shared
+    quantity: Optional[float] = None
+    weight_kg: Optional[float] = None
+
+
+# --- Powiadomienia ---
+
+class NotificationResponse(BaseModel):
+    id: int
+    type: str
+    message: str
+    item_id: Optional[int]
+    created_at: datetime
+    read: bool
+
+    class Config:
+        from_attributes = True
+
+
+# --- Open Food Facts ---
+
+class BarcodeLookupResponse(BaseModel):
+    found: bool
+    name: Optional[str] = None
+    category: Optional[str] = None
+    image_url: Optional[str] = None
+    default_shelf_days: Optional[int] = None
+
+
+# --- Dashboard ---
+
+class DashboardStats(BaseModel):
+    kg_uratowane: float
+    kg_zmarnowane: float
+    zl_zaoszczedzone: float
+    co2_unikniete: float
+    streak_dni: int
+    tygodniowe: List[dict]
+
+
+# --- Spolecznosc ---
+
+class DodajOgloszenieRequest(BaseModel):
+    item_name: str
+    quantity: float
+    unit: str
+    city: str
+    expires_at: Optional[datetime] = None
+
+
+class OgloszenieResponse(BaseModel):
+    id: int
+    user_id: int
+    item_name: str
+    quantity: float
+    unit: str
+    city: str
+    status: str
+    expires_at: Optional[datetime]
+    created_at: datetime
+    kontakt_email: Optional[str] = None
+
+    class Config:
+        from_attributes = True
