@@ -132,12 +132,12 @@ GET  /api/powiadomienia/licznik
 |---|---|
 | Auth (JWT) | gotowe |
 | Spiżarnia CRUD | gotowe |
-| Skanowanie kodów kreskowych + Open Food Facts | Prompt 2 |
-| Web Push + email (APScheduler) | Prompt 2 |
-| Przepisy (Claude API) | Prompt 2 |
-| Dashboard (wykresy Recharts) | Prompt 2 |
-| ML (ryzyko zmarnowania, predykcja zużycia) | Prompt 3 |
-| Tablica wymiany | Prompt 3 |
+| Skanowanie kodów kreskowych + Open Food Facts | gotowe |
+| Web Push + email (APScheduler) | gotowe |
+| Przepisy (Claude API) | gotowe |
+| Dashboard (wykresy Recharts) | gotowe |
+| ML (ryzyko zmarnowania, predykcja zużycia) | gotowe |
+| Tablica wymiany | gotowe |
 
 ## Produkcja
 
