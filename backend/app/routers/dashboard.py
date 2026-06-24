@@ -21,7 +21,7 @@ def _wczytaj_impact() -> pd.DataFrame:
     return pd.read_csv(path)
 
 
-@router.get("/", response_model=DashboardStats)
+@router.get("", response_model=DashboardStats)
 def pobierz_dashboard(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -62,7 +62,7 @@ def pobierz_dashboard(
     return DashboardStats(
         kg_uratowane=round(kg_uratowane, 2),
         kg_zmarnowane=round(kg_zmarnowane, 2),
-        zl_zaoszczone=round(zl_zaoszcz, 2),
+        zl_zaoszczedzone=round(zl_zaoszcz, 2),
         co2_unikniete=round(co2_unikniete, 2),
         streak_dni=streak,
         tygodniowe=tygodniowe,

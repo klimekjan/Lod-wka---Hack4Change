@@ -83,7 +83,7 @@ export default function Dashboard() {
             />
             <KartaStat
               label="Zaoszczędzone"
-              value={data.zl_zaoszczone}
+              value={data.zl_zaoszczedzone}
               unit="zł"
               kolor="text-blue-700"
             />

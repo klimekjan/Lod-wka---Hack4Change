@@ -41,7 +41,7 @@ export default function Navbar() {
               }`}
             >
               {label}
-              {href === '/ustawienia' && licznik && licznik > 0 && (
+              {href === '/ustawienia' && !!licznik && licznik > 0 && (
                 <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                   {licznik}
                 </span>

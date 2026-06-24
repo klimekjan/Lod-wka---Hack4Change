@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Lodówka API", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="Lodówka API", version="0.3.0", lifespan=lifespan, redirect_slashes=False)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
