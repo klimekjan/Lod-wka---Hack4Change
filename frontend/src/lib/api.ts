@@ -62,7 +62,7 @@ export interface Powiadomienie {
 export interface DashboardStats {
   kg_uratowane: number
   kg_zmarnowane: number
-  zl_zaoszczone: number
+  zl_zaoszczedzone: number
   co2_unikniete: number
   streak_dni: number
   tygodniowe: { dzien: string; uratowane: number; zmarnowane: number }[]

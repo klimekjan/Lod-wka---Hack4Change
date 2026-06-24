@@ -11,7 +11,7 @@ from ..schemas import DodajOgloszenieRequest, OgloszenieResponse
 router = APIRouter(prefix="/api/spolecznosc", tags=["spolecznosc"])
 
 
-@router.get("/", response_model=List[OgloszenieResponse])
+@router.get("", response_model=List[OgloszenieResponse])
 def lista_ogloszen(
     miasto: Optional[str] = None,
     current_user: User = Depends(get_current_user),
@@ -41,7 +41,7 @@ def moje_ogloszenia(
     return [_to_response(l, session, ujawnij_kontakt=True) for l in listings]
 
 
-@router.post("/", response_model=OgloszenieResponse, status_code=201)
+@router.post("", response_model=OgloszenieResponse, status_code=201)
 def dodaj_ogloszenie(
     dane: DodajOgloszenieRequest,
     current_user: User = Depends(get_current_user),

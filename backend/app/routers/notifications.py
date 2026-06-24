@@ -11,7 +11,7 @@ from ..schemas import NotificationResponse
 router = APIRouter(prefix="/api/powiadomienia", tags=["powiadomienia"])
 
 
-@router.get("/", response_model=List[NotificationResponse])
+@router.get("", response_model=List[NotificationResponse])
 def lista_powiadomien(
     tylko_nieprzeczytane: bool = False,
     current_user: User = Depends(get_current_user),

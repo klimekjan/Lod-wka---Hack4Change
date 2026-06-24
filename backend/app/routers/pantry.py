@@ -40,7 +40,7 @@ def _to_response(item: PantryItem) -> ProduktResponse:
     return r
 
 
-@router.get("/", response_model=List[ProduktResponse])
+@router.get("", response_model=List[ProduktResponse])
 def lista_produktow(
     status: Optional[str] = "active",
     current_user: User = Depends(get_current_user),
@@ -62,7 +62,7 @@ def lista_produktow(
     return result
 
 
-@router.post("/", response_model=ProduktResponse, status_code=201)
+@router.post("", response_model=ProduktResponse, status_code=201)
 def dodaj_produkt(
     dane: DodajProduktRequest,
     current_user: User = Depends(get_current_user),
