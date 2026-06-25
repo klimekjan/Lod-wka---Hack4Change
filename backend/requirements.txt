@@ -17,6 +17,9 @@ apscheduler>=3.10
 pywebpush>=2.0
 resend>=2.4
 
+# Rate limiting
+slowapi>=0.1.9
+
 # ML
 scikit-learn>=1.5
 joblib>=1.4
