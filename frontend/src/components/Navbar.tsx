@@ -3,9 +3,10 @@ import { useQuery } from '@tanstack/react-query'
 import { powiadomienia } from '../lib/api'
 
 const linki = [
-  { href: '/',            label: 'Spiżarnia' },
+  { href: '/pulpit',      label: 'Pulpit'    },
+  { href: '/spizarnia',   label: 'Spiżarnia' },
   { href: '/przepisy',    label: 'Przepisy'  },
-  { href: '/dashboard',   label: 'Dashboard' },
+  { href: '/tracker',     label: 'Tracker'   },
   { href: '/spolecznosc', label: 'Wymiana'   },
   { href: '/ustawienia',  label: 'Ustawienia'},
 ]
