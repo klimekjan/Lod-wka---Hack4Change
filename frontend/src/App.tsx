@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Logowanie from './pages/Logowanie'
 import Rejestracja from './pages/Rejestracja'
 import StronaGlowna from './pages/StronaGlowna'
+import Pulpit from './pages/Pulpit'
 import Spizarnia from './pages/Spizarnia'
 import Przepisy from './pages/Przepisy'
 import Dashboard from './pages/Dashboard'
@@ -21,7 +22,7 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
 
 function HomeRoute() {
   const token = localStorage.getItem('token')
-  return token ? <Navigate to="/spizarnia" replace /> : <StronaGlowna />
+  return token ? <Navigate to="/pulpit" replace /> : <StronaGlowna />
 }
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -40,10 +41,8 @@ export default function App() {
         <Route path="/" element={<HomeRoute />} />
         <Route path="/logowanie" element={<PublicOnlyRoute><Logowanie /></PublicOnlyRoute>} />
         <Route path="/rejestracja" element={<PublicOnlyRoute><Rejestracja /></PublicOnlyRoute>} />
-        <Route
-          path="/spizarnia"
-          element={<PrivateRoute><AppLayout><Spizarnia /></AppLayout></PrivateRoute>}
-        />
+        <Route path="/pulpit" element={<PrivateRoute><AppLayout><Pulpit /></AppLayout></PrivateRoute>} />
+        <Route path="/spizarnia" element={<PrivateRoute><AppLayout><Spizarnia /></AppLayout></PrivateRoute>} />
         <Route
           path="/przepisy"
           element={
@@ -53,7 +52,7 @@ export default function App() {
           }
         />
         <Route
-          path="/dashboard"
+          path="/tracker"
           element={
             <PrivateRoute>
               <AppLayout><Dashboard /></AppLayout>
