@@ -123,12 +123,12 @@ export default function Spizarnia() {
   })
 
   const handleScan = useCallback(async (barcode: string) => {
-    setSkanerOtwarty(false)
     setSkanBlad('')
     try {
       const res = await spizarnia.skanuj(barcode)
       const d = res.data
       if (!d.found || !d.name) {
+        setSkanerOtwarty(false)
         setSkanBlad(`Kod ${barcode} nie znaleziony w bazie. Wpisz ręcznie.`)
         setFormularzOtwarty(true)
         setForm(f => ({ ...f, name: '' }))
@@ -144,8 +144,10 @@ export default function Spizarnia() {
         unit: 'szt.',
         expiresAt,
       })
+      setSkanerOtwarty(false)
       setFormularzOtwarty(true)
     } catch {
+      setSkanerOtwarty(false)
       setSkanBlad('Błąd połączenia podczas skanowania.')
       setFormularzOtwarty(true)
     }
