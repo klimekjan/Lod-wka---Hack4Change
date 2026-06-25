@@ -20,6 +20,9 @@ class UserResponse(BaseModel):
     id: int
     email: str
     miasto: Optional[str]
+    adres: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
     notify_push: bool
     notify_email: bool
     notify_days_before: int
@@ -32,6 +35,7 @@ class UserResponse(BaseModel):
 
 class UstawieniaRequest(BaseModel):
     miasto: Optional[str] = None
+    adres: Optional[str] = None
     notify_push: Optional[bool] = None
     notify_email: Optional[bool] = None
     notify_days_before: Optional[int] = None
@@ -135,6 +139,9 @@ class OgloszenieResponse(BaseModel):
     quantity: float
     unit: str
     city: str
+    address: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
     status: str
     expires_at: Optional[datetime]
     created_at: datetime

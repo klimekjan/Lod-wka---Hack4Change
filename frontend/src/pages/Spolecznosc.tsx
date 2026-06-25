@@ -1,6 +1,8 @@
 import { useState, FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { spolecznosc, auth, Ogloszenie } from '../lib/api'
+import MapaWymiany from '../components/MapaWymiany'
 
 const JEDNOSTKI = ['szt.', 'kg', 'g', 'l', 'ml', 'opak.']
 
@@ -119,6 +121,7 @@ export default function Spolecznosc() {
   const [formularzOtwarty, setFormularzOtwarty] = useState(false)
   const [form, setForm] = useState<FormState>(defaultForm)
   const [zakładka, setZakładka] = useState<'dostepne' | 'moje'>('dostepne')
+  const [widok, setWidok] = useState<'lista' | 'mapa'>('lista')
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -199,9 +202,24 @@ export default function Spolecznosc() {
         </button>
       </div>
 
-      {formularzOtwarty && (
+      {formularzOtwarty && !user?.adres && (
+        <div className="karta space-y-2">
+          <h2 className="font-semibold text-slate-800">Najpierw ustaw adres</h2>
+          <p className="text-sm text-slate-500">
+            Żeby wystawić produkt na mapie, musisz mieć zapisany adres w profilu.
+          </p>
+          <Link to="/ustawienia" className="btn-primary text-sm inline-block">
+            Przejdź do Ustawień
+          </Link>
+        </div>
+      )}
+
+      {formularzOtwarty && user?.adres && (
         <form onSubmit={submit} className="karta space-y-3">
           <h2 className="font-semibold text-slate-800">Nowe ogłoszenie</h2>
+          <p className="text-xs text-slate-400">
+            Produkt pojawi się na mapie pod adresem: {user.adres}
+          </p>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Produkt</label>
             <input
@@ -308,6 +326,28 @@ export default function Spolecznosc() {
             )}
           </div>
 
+          <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+            {(['lista', 'mapa'] as const).map(w => (
+              <button
+                key={w}
+                onClick={() => setWidok(w)}
+                className={`px-4 py-1 rounded-md text-sm font-medium transition-colors ${
+                  widok === w ? 'bg-white text-zielony-700 shadow-sm' : 'text-slate-500'
+                }`}
+              >
+                {w === 'lista' ? 'Lista' : 'Mapa'}
+              </button>
+            ))}
+          </div>
+
+          {widok === 'mapa' && (
+            <MapaWymiany
+              ogloszenia={ogłoszenia}
+              userId={user?.id}
+              onZarezerwuj={(id) => mutacjaRezerwuj.mutate(id)}
+            />
+          )}
+
           {!filtrMiasto && user?.miasto && (
             <button
               className="text-sm text-zielony-600 hover:underline"
@@ -317,9 +357,9 @@ export default function Spolecznosc() {
             </button>
           )}
 
-          {isLoading && <p className="text-sm text-slate-500 text-center py-8">Ładowanie...</p>}
+          {widok === 'lista' && isLoading && <p className="text-sm text-slate-500 text-center py-8">Ładowanie...</p>}
 
-          {!isLoading && ogłoszenia.length === 0 && (
+          {widok === 'lista' && !isLoading && ogłoszenia.length === 0 && (
             <div className="karta text-center py-10">
               <p className="font-medium text-slate-700">Brak ogłoszeń</p>
               <p className="text-sm text-slate-400 mt-1">
@@ -330,7 +370,7 @@ export default function Spolecznosc() {
             </div>
           )}
 
-          {ogłoszenia.map(og => (
+          {widok === 'lista' && ogłoszenia.map(og => (
             <KartaOgloszenia
               key={og.id}
               og={og}

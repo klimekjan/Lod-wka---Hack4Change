@@ -1,5 +1,7 @@
 import { useState, FormEvent, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { AxiosError } from 'axios'
 import { spizarnia, Produkt } from '../lib/api'
 import BarcodeScanner from '../components/BarcodeScanner'
 
@@ -101,6 +103,8 @@ export default function Spizarnia() {
   const [skanerOtwarty, setSkanerOtwarty] = useState(false)
   const [form, setForm] = useState<FormState>(defaultForm)
   const [skanBlad, setSkanBlad] = useState('')
+  const [akcjaOk, setAkcjaOk] = useState('')
+  const [brakAdresu, setBrakAdresu] = useState(false)
 
   const { data: produkty = [], isLoading, error } = useQuery({
     queryKey: ['spizarnia'],
@@ -119,7 +123,19 @@ export default function Spizarnia() {
   const mutacjaAkcja = useMutation({
     mutationFn: ({ id, action }: { id: number; action: string }) =>
       spizarnia.akcja(id, action).then(r => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['spizarnia'] }),
+    onSuccess: (_data, { action }) => {
+      queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
+      setBrakAdresu(false)
+      if (action === 'shared') {
+        setAkcjaOk('Wystawiono na wymianę — produkt jest już na mapie.')
+        setTimeout(() => setAkcjaOk(''), 4000)
+      }
+    },
+    onError: (err: AxiosError<{ detail?: string }>, { action }) => {
+      if (action === 'shared' && err.response?.status === 400) {
+        setBrakAdresu(true)
+      }
+    },
   })
 
   const handleScan = useCallback(async (barcode: string) => {
@@ -197,6 +213,21 @@ export default function Spizarnia() {
       {skanBlad && (
         <div className="bg-bursztyn-50 border border-bursztyn-400 text-bursztyn-600 text-sm px-3 py-2 rounded-lg">
           {skanBlad}
+        </div>
+      )}
+
+      {akcjaOk && (
+        <div className="bg-zielony-50 border border-zielony-200 text-zielony-700 text-sm px-3 py-2 rounded-lg">
+          {akcjaOk}
+        </div>
+      )}
+
+      {brakAdresu && (
+        <div className="bg-bursztyn-50 border border-bursztyn-400 text-bursztyn-600 text-sm px-3 py-2 rounded-lg flex items-center justify-between gap-3">
+          <span>Żeby oddać produkt na mapie, najpierw ustaw adres w profilu.</span>
+          <Link to="/ustawienia" className="btn-primary text-xs py-1 px-3 shrink-0">
+            Ustawienia
+          </Link>
         </div>
       )}
 

@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 
 from ..auth import get_current_user
 from ..db import get_session
-from ..models import ConsumptionLog, PantryItem, User
+from ..models import ConsumptionLog, PantryItem, ShareListing, User
 from ..schemas import (
     AkcjaProduktRequest,
     AktualizujProduktRequest,
@@ -139,6 +139,25 @@ def akcja_produktu(
             weight_kg=dane.weight_kg,
         )
         session.add(log)
+
+    if dane.action == "shared":
+        if not current_user.address:
+            raise HTTPException(
+                status_code=400,
+                detail="Najpierw ustaw adres w Ustawieniach, zeby produkt pojawil sie na mapie",
+            )
+        listing = ShareListing(
+            user_id=current_user.id,
+            item_name=item.name,
+            quantity=item.quantity,
+            unit=item.unit,
+            city=current_user.city or "",
+            address=current_user.address,
+            lat=current_user.lat,
+            lon=current_user.lon,
+            expires_at=item.expires_at,
+        )
+        session.add(listing)
 
     item.status = dane.action
     session.add(item)

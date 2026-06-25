@@ -10,6 +10,9 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True, index=True)
     password_hash: str
     city: Optional[str] = None
+    address: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
     notify_push: bool = True
     notify_email: bool = True
     notify_days_before: int = 3
@@ -83,6 +86,9 @@ class ShareListing(SQLModel, table=True):
     unit: str
     expires_at: Optional[datetime] = None
     city: str
+    address: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
     # available | reserved | picked_up
     status: str = "available"
     reserved_by: Optional[int] = Field(default=None, foreign_key="users.id")
