@@ -11,6 +11,7 @@ export default function Ustawienia() {
   })
 
   const [miasto, setMiasto] = useState('')
+  const [adres, setAdres] = useState('')
   const [notifyPush, setNotifyPush] = useState(true)
   const [notifyEmail, setNotifyEmail] = useState(true)
   const [dniPrzed, setDniPrzed] = useState(3)
@@ -22,6 +23,7 @@ export default function Ustawienia() {
   useEffect(() => {
     if (user) {
       setMiasto(user.miasto || '')
+      setAdres(user.adres || '')
       setNotifyPush(user.notify_push)
       setNotifyEmail(user.notify_email)
       setDniPrzed(user.notify_days_before)
@@ -48,6 +50,7 @@ export default function Ustawienia() {
   function zapisz() {
     mutacja.mutate({
       miasto: miasto || undefined,
+      adres: adres || undefined,
       notify_push: notifyPush,
       notify_email: notifyEmail,
       notify_days_before: dniPrzed,
@@ -93,6 +96,29 @@ export default function Ustawienia() {
           <p className="text-xs text-slate-400 mt-1">
             Wymagane do tablicy wymiany jedzenia
           </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Adres</label>
+          <input
+            className="input"
+            value={adres}
+            onChange={e => setAdres(e.target.value)}
+            placeholder="np. Długi Targ 1, Gdańsk"
+          />
+          <p className="text-xs text-slate-400 mt-1">
+            Pełny adres (ulica, numer, miasto). Po zapisaniu produkty które oddajesz pojawią się
+            na mapie wymiany. Adres jest widoczny publicznie.
+          </p>
+          {user?.adres && user.lat == null && (
+            <p className="text-xs text-bursztyn-600 mt-1">
+              Nie udało się ustalić lokalizacji tego adresu na mapie — sprawdź pisownię.
+            </p>
+          )}
+          {user?.adres && user.lat != null && (
+            <p className="text-xs text-zielony-600 mt-1">
+              Lokalizacja ustalona — produkty pojawią się na mapie.
+            </p>
+          )}
         </div>
       </div>
 

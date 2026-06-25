@@ -43,6 +43,9 @@ export interface User {
   id: number
   email: string
   miasto?: string
+  adres?: string
+  lat?: number
+  lon?: number
   notify_push: boolean
   notify_email: boolean
   notify_days_before: number
@@ -75,6 +78,9 @@ export interface Ogloszenie {
   quantity: number
   unit: string
   city: string
+  address?: string
+  lat?: number
+  lon?: number
   status: string
   expires_at?: string
   created_at: string

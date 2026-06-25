@@ -6,6 +6,7 @@ from ..db import get_session
 from ..models import User
 from ..auth import hash_password, verify_password, create_access_token, get_current_user
 from ..schemas import RejestrujRequest, TokenResponse, UserResponse, UstawieniaRequest
+from ..services.geocoding import geokoduj
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -49,6 +50,14 @@ def aktualizuj_ustawienia(
 ):
     if dane.miasto is not None:
         current_user.city = dane.miasto
+    if dane.adres is not None and dane.adres != current_user.address:
+        current_user.address = dane.adres
+        wspolrzedne = geokoduj(dane.adres)
+        if wspolrzedne:
+            current_user.lat, current_user.lon = wspolrzedne
+        else:
+            current_user.lat = None
+            current_user.lon = None
     if dane.notify_push is not None:
         current_user.notify_push = dane.notify_push
     if dane.notify_email is not None:
@@ -68,6 +77,9 @@ def _user_to_response(user: User) -> UserResponse:
         id=user.id,
         email=user.email,
         miasto=user.city,
+        adres=user.address,
+        lat=user.lat,
+        lon=user.lon,
         notify_push=user.notify_push,
         notify_email=user.notify_email,
         notify_days_before=user.notify_days_before,

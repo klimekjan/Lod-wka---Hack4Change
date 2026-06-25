@@ -47,12 +47,20 @@ def dodaj_ogloszenie(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    if not current_user.address:
+        raise HTTPException(
+            status_code=400,
+            detail="Najpierw ustaw adres w Ustawieniach, zeby produkt pojawil sie na mapie",
+        )
     listing = ShareListing(
         user_id=current_user.id,
         item_name=dane.item_name,
         quantity=dane.quantity,
         unit=dane.unit,
         city=dane.city or current_user.city or "",
+        address=current_user.address,
+        lat=current_user.lat,
+        lon=current_user.lon,
         expires_at=dane.expires_at,
     )
     session.add(listing)
@@ -133,6 +141,9 @@ def _to_response(
         quantity=listing.quantity,
         unit=listing.unit,
         city=listing.city,
+        address=listing.address,
+        lat=listing.lat,
+        lon=listing.lon,
         status=listing.status,
         expires_at=listing.expires_at,
         created_at=listing.created_at,
