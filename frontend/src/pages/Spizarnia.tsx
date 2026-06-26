@@ -87,6 +87,7 @@ interface FormState {
   quantity: string
   unit: string
   expiresAt: string
+  imageUrl: string
 }
 
 const defaultForm: FormState = {
@@ -95,6 +96,7 @@ const defaultForm: FormState = {
   quantity: '1',
   unit: 'szt.',
   expiresAt: '',
+  imageUrl: '',
 }
 
 export default function Spizarnia() {
@@ -159,6 +161,7 @@ export default function Spizarnia() {
         quantity: '1',
         unit: 'szt.',
         expiresAt,
+        imageUrl: d.image_url || '',
       })
       setSkanerOtwarty(false)
       setFormularzOtwarty(true)
@@ -177,6 +180,7 @@ export default function Spizarnia() {
       quantity: parseFloat(form.quantity),
       unit: form.unit,
       expires_at: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
+      image_url: form.imageUrl || undefined,
     })
   }
 
@@ -235,17 +239,28 @@ export default function Spizarnia() {
 
       {formularzOtwarty && (
         <form onSubmit={submit} className="karta space-y-3">
-          <h2 className="font-semibold text-slate-800">Nowy produkt</h2>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nazwa</label>
-            <input
-              className="input"
-              value={form.name}
-              onChange={e => setField('name', e.target.value)}
-              required
-              placeholder="np. Mleko 3,2%"
-              autoFocus
-            />
+          {!form.imageUrl && (
+            <h2 className="font-semibold text-slate-800">Nowy produkt</h2>
+          )}
+          <div className="flex items-start gap-3">
+            {form.imageUrl && (
+              <img
+                src={form.imageUrl}
+                alt={form.name}
+                className="w-14 h-14 object-contain rounded-lg border border-slate-100 shrink-0 mt-5"
+              />
+            )}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nazwa</label>
+              <input
+                className="input"
+                value={form.name}
+                onChange={e => setField('name', e.target.value)}
+                required
+                placeholder="np. Mleko 3,2%"
+                autoFocus
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
