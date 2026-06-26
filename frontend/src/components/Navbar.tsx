@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { powiadomienia, znajomi } from '../lib/api'
+import { useTheme } from '../lib/theme'
 import Logo from './Logo'
 
 const linki = [
@@ -29,6 +30,8 @@ export default function Navbar() {
     refetchInterval: 60_000,
   })
 
+  const { light, toggle } = useTheme()
+
   function wyloguj() {
     localStorage.removeItem('token')
     navigate('/logowanie')
@@ -36,11 +39,11 @@ export default function Navbar() {
 
   return (
     <nav className="bg-grafit-900 border-b border-grafit-600 sticky top-0 z-50">
-      <div className="max-w-2xl mx-auto px-4 flex items-center justify-between h-14">
-        <Link to="/pulpit">
+      <div className="w-full px-4 flex items-center h-14">
+        <Link to="/pulpit" className="shrink-0">
           <Logo size={36} />
         </Link>
-        <div className="flex items-center gap-0.5 overflow-x-auto">
+        <div className="flex-1 flex justify-center items-center gap-0.5">
           {linki.map(({ href, label }) => (
             <Link
               key={href}
@@ -64,13 +67,30 @@ export default function Navbar() {
               )}
             </Link>
           ))}
-          <button
-            onClick={wyloguj}
-            className="ml-2 text-xs text-grafit-400 hover:text-grafit-300 transition-colors"
-          >
-            wyloguj
-          </button>
         </div>
+        <button
+          onClick={toggle}
+          className="shrink-0 p-1.5 rounded-md text-grafit-400 hover:text-grafit-100 hover:bg-grafit-700 transition-colors"
+          title={light ? 'Tryb ciemny' : 'Tryb jasny'}
+        >
+          {light ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+            </svg>
+          )}
+        </button>
+        <button
+          onClick={wyloguj}
+          className="shrink-0 text-xs text-grafit-400 hover:text-grafit-300 transition-colors"
+        >
+          wyloguj
+        </button>
       </div>
     </nav>
   )
