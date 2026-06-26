@@ -11,22 +11,22 @@ const KATEGORIE = [
 ]
 const JEDNOSTKI = ['szt.', 'kg', 'g', 'l', 'ml', 'opak.']
 
-function StatusBadge({ dniDo }: { dniDo?: number | null }) {
-  if (dniDo === undefined || dniDo === null) return null
-  if (dniDo < 0) return <span className="badge-przeterminowany">przeterminowany</span>
-  if (dniDo === 0) return <span className="badge-wylot">dziś</span>
-  if (dniDo <= 3) return <span className="badge-wylot">{dniDo} {dniDo === 1 ? 'dzień' : 'dni'}</span>
-  return <span className="badge-swiezy">{dniDo} dni</span>
+function kolorDaty(dniDo?: number | null): string {
+  if (dniDo === undefined || dniDo === null) return 'bg-slate-800/50 text-white'
+  if (dniDo < 0)  return 'bg-red-600/80 text-white'
+  if (dniDo <= 2) return 'bg-orange-500/80 text-white'
+  if (dniDo <= 5) return 'bg-bursztyn-500/80 text-white'
+  if (dniDo <= 10) return 'bg-zielony-600/80 text-white'
+  return 'bg-blue-500/80 text-white'
 }
 
-function borderKolor(dniDo?: number | null) {
-  if (dniDo === undefined || dniDo === null) return 'border-slate-200'
-  if (dniDo < 0) return 'border-red-400'
-  if (dniDo <= 3) return 'border-bursztyn-400'
-  return 'border-zielony-400'
+function formatData(expiresAt?: string | null): string {
+  if (!expiresAt) return ''
+  const d = new Date(expiresAt)
+  return d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })
 }
 
-function KartaProduktu({
+function KafelekProduktu({
   produkt,
   onAkcja,
 }: {
@@ -36,44 +36,69 @@ function KartaProduktu({
   const [otwarty, setOtwarty] = useState(false)
 
   return (
-    <div className={`karta border-l-4 ${borderKolor(produkt.days_left)}`}>
-      <div className="flex items-start justify-between gap-3">
-        {produkt.image_url && (
-          <img
-            src={produkt.image_url}
-            alt={produkt.name}
-            className="w-10 h-10 object-contain rounded shrink-0"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-          />
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-slate-900 truncate">{produkt.name}</span>
-            <StatusBadge dniDo={produkt.days_left} />
-          </div>
-          <p className="text-sm text-slate-500 mt-0.5">
-            {produkt.quantity} {produkt.unit}
-            {produkt.category !== 'inne' && ` · ${produkt.category}`}
-          </p>
+    <div
+      className="relative aspect-square rounded-xl overflow-hidden cursor-pointer select-none bg-slate-100"
+      onClick={() => setOtwarty(o => !o)}
+    >
+      {produkt.image_url ? (
+        <img
+          src={produkt.image_url}
+          alt={produkt.name}
+          className="w-full h-full object-cover"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-4xl text-slate-300">
+          🥫
         </div>
-        <button
-          onClick={() => setOtwarty(o => !o)}
-          className="shrink-0 text-slate-400 hover:text-slate-700 font-bold text-lg leading-none px-1"
-          aria-label="Opcje"
-        >
-          {otwarty ? '−' : '···'}
-        </button>
+      )}
+
+      {/* Data ważności — góra lewa */}
+      {produkt.expires_at && (
+        <span className={`absolute top-1.5 left-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md backdrop-blur-sm ${kolorDaty(produkt.days_left)}`}>
+          {formatData(produkt.expires_at)}
+        </span>
+      )}
+
+      {/* Ilość — góra prawa */}
+      <span className="absolute top-1.5 right-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-black/40 text-white backdrop-blur-sm">
+        {produkt.quantity} {produkt.unit}
+      </span>
+
+      {/* Nazwa — dół */}
+      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-2 pt-4 pb-1.5">
+        <p className="text-white text-xs font-medium truncate leading-tight">{produkt.name}</p>
       </div>
+
+      {/* Akcje — overlay po tapnięciu */}
       {otwarty && (
-        <div className="mt-3 pt-3 border-t border-slate-100 flex gap-2 flex-wrap">
-          <button className="btn-primary text-sm py-1.5 px-3" onClick={() => onAkcja('eaten')}>
+        <div
+          className="absolute inset-0 bg-black/65 flex flex-col items-center justify-center gap-2 p-2"
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="w-full bg-zielony-600 text-white text-xs font-semibold py-1.5 rounded-lg active:bg-zielony-700"
+            onClick={() => { onAkcja('eaten'); setOtwarty(false) }}
+          >
             Zjedzone
           </button>
-          <button className="btn-secondary text-sm py-1.5 px-3" onClick={() => onAkcja('wasted')}>
+          <button
+            className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-lg active:bg-white/30"
+            onClick={() => { onAkcja('wasted'); setOtwarty(false) }}
+          >
             Wyrzucone
           </button>
-          <button className="btn-secondary text-sm py-1.5 px-3" onClick={() => onAkcja('shared')}>
+          <button
+            className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-lg active:bg-white/30"
+            onClick={() => { onAkcja('shared'); setOtwarty(false) }}
+          >
             Oddaj
+          </button>
+          <button
+            className="mt-1 text-white/60 text-xs"
+            onClick={() => setOtwarty(false)}
+          >
+            ✕ zamknij
           </button>
         </div>
       )}
@@ -87,6 +112,7 @@ interface FormState {
   quantity: string
   unit: string
   expiresAt: string
+  imageUrl: string
 }
 
 const defaultForm: FormState = {
@@ -95,6 +121,7 @@ const defaultForm: FormState = {
   quantity: '1',
   unit: 'szt.',
   expiresAt: '',
+  imageUrl: '',
 }
 
 export default function Spizarnia() {
@@ -159,6 +186,7 @@ export default function Spizarnia() {
         quantity: '1',
         unit: 'szt.',
         expiresAt,
+        imageUrl: d.image_url || '',
       })
       setSkanerOtwarty(false)
       setFormularzOtwarty(true)
@@ -177,6 +205,7 @@ export default function Spizarnia() {
       quantity: parseFloat(form.quantity),
       unit: form.unit,
       expires_at: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
+      image_url: form.imageUrl || undefined,
     })
   }
 
@@ -235,17 +264,28 @@ export default function Spizarnia() {
 
       {formularzOtwarty && (
         <form onSubmit={submit} className="karta space-y-3">
-          <h2 className="font-semibold text-slate-800">Nowy produkt</h2>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nazwa</label>
-            <input
-              className="input"
-              value={form.name}
-              onChange={e => setField('name', e.target.value)}
-              required
-              placeholder="np. Mleko 3,2%"
-              autoFocus
-            />
+          {!form.imageUrl && (
+            <h2 className="font-semibold text-slate-800">Nowy produkt</h2>
+          )}
+          <div className="flex items-start gap-3">
+            {form.imageUrl && (
+              <img
+                src={form.imageUrl}
+                alt={form.name}
+                className="w-14 h-14 object-contain rounded-lg border border-slate-100 shrink-0 mt-5"
+              />
+            )}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nazwa</label>
+              <input
+                className="input"
+                value={form.name}
+                onChange={e => setField('name', e.target.value)}
+                required
+                placeholder="np. Mleko 3,2%"
+                autoFocus
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -320,9 +360,9 @@ export default function Spizarnia() {
           <h2 className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-2">
             Przeterminowane ({przeterminowane.length})
           </h2>
-          <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
             {przeterminowane.map(p => (
-              <KartaProduktu
+              <KafelekProduktu
                 key={p.id}
                 produkt={p}
                 onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
@@ -337,9 +377,9 @@ export default function Spizarnia() {
           <h2 className="text-xs font-semibold text-bursztyn-600 uppercase tracking-widest mb-2">
             Na wylocie ({naWylocie.length})
           </h2>
-          <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
             {naWylocie.map(p => (
-              <KartaProduktu
+              <KafelekProduktu
                 key={p.id}
                 produkt={p}
                 onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
@@ -354,9 +394,9 @@ export default function Spizarnia() {
           <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">
             Świeże ({swieże.length})
           </h2>
-          <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
             {swieże.map(p => (
-              <KartaProduktu
+              <KafelekProduktu
                 key={p.id}
                 produkt={p}
                 onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
