@@ -145,6 +145,7 @@ def _to_response(
         lat=listing.lat,
         lon=listing.lon,
         status=listing.status,
+        reserved_by=listing.reserved_by,
         expires_at=listing.expires_at,
         created_at=listing.created_at,
         kontakt_email=kontakt,
