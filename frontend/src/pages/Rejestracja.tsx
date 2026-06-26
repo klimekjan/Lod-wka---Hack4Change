@@ -6,7 +6,10 @@ export default function Rejestracja() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [haslo, setHaslo] = useState('')
-  const [miasto, setMiasto] = useState('')
+  const [imie, setImie] = useState('')
+  const [nazwisko, setNazwisko] = useState('')
+  const [adres, setAdres] = useState('')
+  const [nick, setNick] = useState('')
   const [blad, setBlad] = useState('')
   const [ladowanie, setLadowanie] = useState(false)
 
@@ -17,9 +20,20 @@ export default function Rejestracja() {
       setBlad('Hasło musi mieć co najmniej 6 znaków')
       return
     }
+    if (adres && !nick) {
+      setBlad('Nick jest wymagany gdy podajesz adres')
+      return
+    }
     setLadowanie(true)
     try {
-      const res = await auth.rejestruj(email, haslo, miasto || undefined)
+      const res = await auth.rejestruj(
+        email,
+        haslo,
+        imie,
+        nazwisko,
+        adres || undefined,
+        nick || undefined,
+      )
       localStorage.setItem('token', res.data.access_token)
       navigate('/')
     } catch (err: any) {
@@ -42,6 +56,30 @@ export default function Rejestracja() {
               {blad}
             </div>
           )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Imię</label>
+              <input
+                type="text"
+                className="input"
+                value={imie}
+                onChange={e => setImie(e.target.value)}
+                required
+                placeholder="Jan"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nazwisko</label>
+              <input
+                type="text"
+                className="input"
+                value={nazwisko}
+                onChange={e => setNazwisko(e.target.value)}
+                required
+                placeholder="Kowalski"
+              />
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <input
@@ -68,16 +106,32 @@ export default function Rejestracja() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Miasto <span className="text-slate-400 font-normal">(opcjonalnie, do tablicy wymiany)</span>
+              Adres <span className="text-slate-400 font-normal">(opcjonalnie — pojawi się na mapie wymiany)</span>
             </label>
             <input
               type="text"
               className="input"
-              value={miasto}
-              onChange={e => setMiasto(e.target.value)}
-              placeholder="np. Gdańsk"
+              value={adres}
+              onChange={e => setAdres(e.target.value)}
+              placeholder="np. Długi Targ 1, Gdańsk"
             />
+            <p className="text-xs text-slate-400 mt-1">Adres będzie widoczny publicznie na mapie.</p>
           </div>
+          {adres && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Nick <span className="text-red-500">*</span>
+                <span className="text-slate-400 font-normal ml-1">(wymagany przy podaniu adresu)</span>
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={nick}
+                onChange={e => setNick(e.target.value)}
+                placeholder="np. janek_gda"
+              />
+            </div>
+          )}
           <button type="submit" className="btn-primary w-full" disabled={ladowanie}>
             {ladowanie ? 'Tworzenie konta...' : 'Zarejestruj się'}
           </button>

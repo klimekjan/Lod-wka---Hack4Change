@@ -11,7 +11,7 @@ from slowapi.util import get_remote_address
 load_dotenv()
 
 from .db import init_db
-from .routers import auth, pantry, notifications, dashboard, community, produkty, push, recipes
+from .routers import auth, pantry, notifications, dashboard, community, produkty, push, recipes, friends
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -48,6 +48,7 @@ app.include_router(community.router)
 app.include_router(produkty.router)
 app.include_router(push.router)
 app.include_router(recipes.router)
+app.include_router(friends.router)
 
 
 @app.get("/api/health")
