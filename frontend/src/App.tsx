@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard'
 import Spolecznosc from './pages/Spolecznosc'
 import Ustawienia from './pages/Ustawienia'
 import Navbar from './components/Navbar'
+import BottomNav from './components/BottomNav'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token')
@@ -27,9 +28,10 @@ function HomeRoute() {
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col">
       <Navbar />
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-6">{children}</main>
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-6 pb-24 md:pb-6">{children}</main>
+      <BottomNav />
     </div>
   )
 }

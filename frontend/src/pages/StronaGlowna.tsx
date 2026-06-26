@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 export default function StronaGlowna() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col">
 
       {/* ── HERO ─────────────────────────────────────────────────────────
           Główna sekcja ekranu startowego.
@@ -31,13 +31,13 @@ export default function StronaGlowna() {
             to="/rejestracja"
             className="btn-primary text-center text-base py-3"
           >
-            Zarejestruj się
+            Zaloguj się
           </Link>
           <Link
             to="/logowanie"
             className="btn-secondary text-center text-base py-3"
           >
-            Zaloguj się
+            Zarejestruj się
           </Link>
         </div>
 

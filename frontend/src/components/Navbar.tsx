@@ -1,15 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { Settings } from 'lucide-react'
 import { powiadomienia } from '../lib/api'
+import { SEKCJE } from '../lib/nav'
 
-const linki = [
-  { href: '/pulpit',      label: 'Pulpit'    },
-  { href: '/spizarnia',   label: 'Spiżarnia' },
-  { href: '/przepisy',    label: 'Przepisy'  },
-  { href: '/tracker',     label: 'Tracker'   },
-  { href: '/spolecznosc', label: 'Wymiana'   },
-  { href: '/ustawienia',  label: 'Ustawienia'},
-]
+const linki = SEKCJE.filter((s) => s.href !== '/pulpit')
 
 export default function Navbar() {
   const { pathname } = useLocation()
@@ -17,7 +12,7 @@ export default function Navbar() {
 
   const { data: licznik } = useQuery({
     queryKey: ['licznik-powiadomien'],
-    queryFn: () => powiadomienia.licznik().then(r => r.data.count),
+    queryFn: () => powiadomienia.licznik().then((r) => r.data.count),
     refetchInterval: 60_000,
   })
 
@@ -27,10 +22,14 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 pt-safe">
       <div className="max-w-2xl mx-auto px-4 flex items-center justify-between h-14">
-        <span className="font-bold text-zielony-700 text-lg tracking-tight">Eat Me App</span>
-        <div className="flex items-center gap-1 overflow-x-auto">
+        <Link to="/pulpit" className="font-bold text-zielony-700 text-lg tracking-tight shrink-0">
+          Eat Me App
+        </Link>
+
+        {/* Linki — tylko desktop */}
+        <div className="hidden md:flex items-center gap-1 overflow-x-auto">
           {linki.map(({ href, label }) => (
             <Link
               key={href}
@@ -42,11 +41,6 @@ export default function Navbar() {
               }`}
             >
               {label}
-              {href === '/ustawienia' && !!licznik && licznik > 0 && (
-                <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
-                  {licznik}
-                </span>
-              )}
             </Link>
           ))}
           <button
@@ -55,6 +49,26 @@ export default function Navbar() {
           >
             wyloguj
           </button>
+        </div>
+
+        {/* Prawa strona — zawsze widoczna */}
+        <div className="flex items-center gap-1">
+          <Link
+            to="/ustawienia"
+            className={`relative p-2 rounded-md transition-colors ${
+              pathname === '/ustawienia'
+                ? 'text-zielony-700 bg-zielony-50'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+            }`}
+            aria-label="Ustawienia"
+          >
+            <Settings size={20} />
+            {!!licznik && licznik > 0 && (
+              <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] leading-none rounded-full w-4 h-4 flex items-center justify-center">
+                {licznik > 9 ? '9+' : licznik}
+              </span>
+            )}
+          </Link>
         </div>
       </div>
     </nav>

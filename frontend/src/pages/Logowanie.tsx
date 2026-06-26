@@ -25,7 +25,7 @@ export default function Logowanie() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+    <div className="min-h-screen min-h-[100dvh] bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-zielony-700">Eat Me App</h1>

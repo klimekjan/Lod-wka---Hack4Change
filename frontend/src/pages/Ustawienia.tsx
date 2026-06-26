@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { auth } from '../lib/api'
 import { subskrybujPush, czySubskrybowany } from '../lib/push'
 
 export default function Ustawienia() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => auth.mnie().then(r => r.data),
@@ -238,6 +240,16 @@ export default function Ustawienia() {
         </button>
         {zapisano && <span className="text-sm text-zielony-600 font-medium">Zapisano</span>}
       </div>
+
+      <button
+        className="md:hidden btn-danger w-full mt-2"
+        onClick={() => {
+          localStorage.removeItem('token')
+          navigate('/logowanie')
+        }}
+      >
+        Wyloguj się
+      </button>
     </div>
   )
 }
