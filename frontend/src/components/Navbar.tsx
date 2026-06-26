@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { powiadomienia } from '../lib/api'
+import { powiadomienia, znajomi } from '../lib/api'
 
 const linki = [
   { href: '/pulpit',      label: 'Pulpit'    },
@@ -8,6 +8,7 @@ const linki = [
   { href: '/przepisy',    label: 'Przepisy'  },
   { href: '/tracker',     label: 'Tracker'   },
   { href: '/spolecznosc', label: 'Wymiana'   },
+  { href: '/znajomi',     label: 'Znajomi'   },
   { href: '/ustawienia',  label: 'Ustawienia'},
 ]
 
@@ -15,9 +16,15 @@ export default function Navbar() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
 
-  const { data: licznik } = useQuery({
+  const { data: licznikPowiadomien } = useQuery({
     queryKey: ['licznik-powiadomien'],
     queryFn: () => powiadomienia.licznik().then(r => r.data.count),
+    refetchInterval: 60_000,
+  })
+
+  const { data: licznikZaproszen } = useQuery({
+    queryKey: ['licznik-zaproszen'],
+    queryFn: () => znajomi.licznikZaproszen().then(r => r.data.count),
     refetchInterval: 60_000,
   })
 
@@ -42,9 +49,14 @@ export default function Navbar() {
               }`}
             >
               {label}
-              {href === '/ustawienia' && !!licznik && licznik > 0 && (
+              {href === '/ustawienia' && !!licznikPowiadomien && licznikPowiadomien > 0 && (
                 <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
-                  {licznik}
+                  {licznikPowiadomien}
+                </span>
+              )}
+              {href === '/znajomi' && !!licznikZaproszen && licznikZaproszen > 0 && (
+                <span className="ml-1.5 bg-bursztyn-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                  {licznikZaproszen}
                 </span>
               )}
             </Link>

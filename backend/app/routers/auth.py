@@ -8,7 +8,7 @@ from ..db import get_session
 from ..models import User
 from ..auth import hash_password, verify_password, create_access_token, get_current_user
 from ..schemas import RejestrujRequest, TokenResponse, UserResponse, UstawieniaRequest
-from ..services.geocoding import geokoduj
+from ..services.geocoding import geokoduj_szczegolowo
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 limiter = Limiter(key_func=get_remote_address)
@@ -18,10 +18,25 @@ limiter = Limiter(key_func=get_remote_address)
 def rejestruj(dane: RejestrujRequest, session: Session = Depends(get_session)):
     if session.exec(select(User).where(User.email == dane.email)).first():
         raise HTTPException(status_code=400, detail="Nie można zarejestrować konta z podanymi danymi")
+    if dane.nick and session.exec(select(User).where(User.nick == dane.nick)).first():
+        raise HTTPException(status_code=400, detail="Nie można zarejestrować konta z podanymi danymi")
+
+    lat, lon, miasto = None, None, None
+    if dane.adres:
+        wynik = geokoduj_szczegolowo(dane.adres)
+        if wynik:
+            lat, lon, miasto = wynik
+
     user = User(
         email=dane.email,
         password_hash=hash_password(dane.haslo),
-        city=dane.miasto,
+        first_name=dane.imie,
+        last_name=dane.nazwisko,
+        nick=dane.nick,
+        city=miasto,
+        address=dane.adres,
+        lat=lat,
+        lon=lon,
     )
     session.add(user)
     session.commit()
@@ -53,13 +68,24 @@ def aktualizuj_ustawienia(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    if dane.imie is not None:
+        current_user.first_name = dane.imie
+    if dane.nazwisko is not None:
+        current_user.last_name = dane.nazwisko
+    if dane.nick is not None and dane.nick != current_user.nick:
+        zajety = session.exec(select(User).where(User.nick == dane.nick)).first()
+        if zajety:
+            raise HTTPException(status_code=400, detail="Ten nick jest już zajęty")
+        current_user.nick = dane.nick
     if dane.miasto is not None:
         current_user.city = dane.miasto
     if dane.adres is not None and dane.adres != current_user.address:
         current_user.address = dane.adres
-        wspolrzedne = geokoduj(dane.adres)
-        if wspolrzedne:
-            current_user.lat, current_user.lon = wspolrzedne
+        wynik = geokoduj_szczegolowo(dane.adres)
+        if wynik:
+            current_user.lat, current_user.lon, miasto = wynik
+            if miasto:
+                current_user.city = miasto
         else:
             current_user.lat = None
             current_user.lon = None
@@ -81,6 +107,9 @@ def _user_to_response(user: User) -> UserResponse:
     return UserResponse(
         id=user.id,
         email=user.email,
+        imie=user.first_name,
+        nazwisko=user.last_name,
+        nick=user.nick,
         miasto=user.city,
         adres=user.address,
         lat=user.lat,

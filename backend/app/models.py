@@ -9,6 +9,9 @@ class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
     password_hash: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    nick: Optional[str] = Field(default=None, index=True)
     city: Optional[str] = None
     address: Optional[str] = None
     lat: Optional[float] = None
@@ -92,6 +95,17 @@ class ShareListing(SQLModel, table=True):
     # available | reserved | picked_up
     status: str = "available"
     reserved_by: Optional[int] = Field(default=None, foreign_key="users.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Friendship(SQLModel, table=True):
+    __tablename__ = "friendships"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    requester_id: int = Field(foreign_key="users.id", index=True)
+    addressee_id: int = Field(foreign_key="users.id", index=True)
+    # pending | accepted
+    status: str = "pending"
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

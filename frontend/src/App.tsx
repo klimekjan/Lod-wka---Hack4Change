@@ -7,6 +7,7 @@ import Spizarnia from './pages/Spizarnia'
 import Przepisy from './pages/Przepisy'
 import Dashboard from './pages/Dashboard'
 import Spolecznosc from './pages/Spolecznosc'
+import Znajomi from './pages/Znajomi'
 import Ustawienia from './pages/Ustawienia'
 import Navbar from './components/Navbar'
 
@@ -64,6 +65,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <AppLayout><Spolecznosc /></AppLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/znajomi"
+          element={
+            <PrivateRoute>
+              <AppLayout><Znajomi /></AppLayout>
             </PrivateRoute>
           }
         />

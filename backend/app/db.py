@@ -14,7 +14,14 @@ engine = create_engine(
 # Kolumny dodane po pierwszym wdrozeniu — create_all nie aktualizuje istniejacych tabel,
 # wiec dokladamy je recznie przez ALTER TABLE (idempotentnie, tylko brakujace).
 _MIGRACJE = {
-    "users": [("address", "TEXT"), ("lat", "FLOAT"), ("lon", "FLOAT")],
+    "users": [
+        ("address", "TEXT"),
+        ("lat", "FLOAT"),
+        ("lon", "FLOAT"),
+        ("first_name", "TEXT"),
+        ("last_name", "TEXT"),
+        ("nick", "TEXT"),
+    ],
     "share_listings": [("address", "TEXT"), ("lat", "FLOAT"), ("lon", "FLOAT")],
 }
 
