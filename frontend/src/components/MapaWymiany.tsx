@@ -55,7 +55,7 @@ export default function MapaWymiany({ ogloszenia, userId, onZarezerwuj }: Props)
   const zoom = zPinezka.length > 0 ? 12 : 6
 
   return (
-    <div className="rounded-xl overflow-hidden border border-slate-200">
+    <div className="rounded-xl overflow-hidden border border-grafit-600">
       <MapContainer
         center={srodek}
         zoom={zoom}
@@ -78,12 +78,12 @@ export default function MapaWymiany({ ogloszenia, userId, onZarezerwuj }: Props)
             <Marker key={o.id} position={[o.lat!, o.lon!]} icon={icon}>
               <Popup>
                 <div className="space-y-1 min-w-[140px]">
-                  <p className="font-semibold text-slate-900">{o.item_name}</p>
-                  <p className="text-sm text-slate-600">
+                  <p className="font-semibold">{o.item_name}</p>
+                  <p className="text-sm">
                     {o.quantity} {o.unit}
                   </p>
-                  <p className="text-xs text-slate-500">{etykieta ?? 'Anonim'}</p>
-                  {o.address && <p className="text-xs text-slate-400">{o.address}</p>}
+                  <p className="text-xs text-gray-500">{etykieta ?? 'Anonim'}</p>
+                  {o.address && <p className="text-xs text-gray-400">{o.address}</p>}
                   {czyZnajomy && (
                     <p className="text-xs font-medium" style={{ color: '#d97706' }}>Znajomy</p>
                   )}
@@ -96,7 +96,7 @@ export default function MapaWymiany({ ogloszenia, userId, onZarezerwuj }: Props)
                     </button>
                   )}
                   {o.user_id === userId && (
-                    <p className="text-xs text-zielony-700 font-medium">Twoje ogłoszenie</p>
+                    <p className="text-xs font-medium" style={{ color: '#16a34a' }}>Twoje ogłoszenie</p>
                   )}
                 </div>
               </Popup>
