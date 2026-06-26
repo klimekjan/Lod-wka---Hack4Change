@@ -16,8 +16,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectManifest: { swDest: 'dist/sw.js' },
       manifest: {
-        name: 'Lodówka',
-        short_name: 'Lodówka',
+        name: 'Eat Me App',
+        short_name: 'Eat Me',
         description: 'Zarządzaj spiżarnią i nie marnuj jedzenia',
         theme_color: '#16a34a',
         background_color: '#ffffff',

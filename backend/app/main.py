@@ -4,11 +4,16 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 load_dotenv()
 
 from .db import init_db
 from .routers import auth, pantry, notifications, dashboard, community, produkty, push, recipes
+
+limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager
@@ -22,6 +27,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Lodówka API", version="0.3.0", lifespan=lifespan, redirect_slashes=False)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 

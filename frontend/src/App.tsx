@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Logowanie from './pages/Logowanie'
 import Rejestracja from './pages/Rejestracja'
+import StronaGlowna from './pages/StronaGlowna'
+import Pulpit from './pages/Pulpit'
 import Spizarnia from './pages/Spizarnia'
 import Przepisy from './pages/Przepisy'
 import Dashboard from './pages/Dashboard'
@@ -11,6 +13,16 @@ import Navbar from './components/Navbar'
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token')
   return token ? <>{children}</> : <Navigate to="/logowanie" replace />
+}
+
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem('token')
+  return token ? <Navigate to="/pulpit" replace /> : <>{children}</>
+}
+
+function HomeRoute() {
+  const token = localStorage.getItem('token')
+  return token ? <Navigate to="/pulpit" replace /> : <StronaGlowna />
 }
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -26,16 +38,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/logowanie" element={<Logowanie />} />
-        <Route path="/rejestracja" element={<Rejestracja />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <AppLayout><Spizarnia /></AppLayout>
-            </PrivateRoute>
-          }
-        />
+        <Route path="/" element={<HomeRoute />} />
+        <Route path="/logowanie" element={<PublicOnlyRoute><Logowanie /></PublicOnlyRoute>} />
+        <Route path="/rejestracja" element={<PublicOnlyRoute><Rejestracja /></PublicOnlyRoute>} />
+        <Route path="/pulpit" element={<PrivateRoute><AppLayout><Pulpit /></AppLayout></PrivateRoute>} />
+        <Route path="/spizarnia" element={<PrivateRoute><AppLayout><Spizarnia /></AppLayout></PrivateRoute>} />
         <Route
           path="/przepisy"
           element={
@@ -45,7 +52,7 @@ export default function App() {
           }
         />
         <Route
-          path="/dashboard"
+          path="/tracker"
           element={
             <PrivateRoute>
               <AppLayout><Dashboard /></AppLayout>
@@ -68,7 +75,7 @@ export default function App() {
             </PrivateRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/spizarnia" replace />} />
       </Routes>
     </BrowserRouter>
   )
