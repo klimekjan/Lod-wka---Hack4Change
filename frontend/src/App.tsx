@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider } from './lib/theme'
 import Logowanie from './pages/Logowanie'
 import Rejestracja from './pages/Rejestracja'
 import StronaGlowna from './pages/StronaGlowna'
@@ -37,6 +38,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomeRoute />} />
@@ -87,5 +89,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/spizarnia" replace />} />
       </Routes>
     </BrowserRouter>
+    </ThemeProvider>
   )
 }

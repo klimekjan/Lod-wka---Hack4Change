@@ -38,12 +38,14 @@
 
   /* --- App cards & inputs (grafit) --- */
   .karta {
-    @apply bg-grafit-700 rounded-xl border border-grafit-600 shadow-sm p-4;
+    @apply rounded-xl p-4;
+    background: radial-gradient(ellipse at bottom right, rgba(255,255,255,0.06) 0%, transparent 60%), #26271f;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
   }
   .input {
-    @apply w-full bg-grafit-800 border border-grafit-600 rounded-lg px-3 py-2 text-sm
-           text-grafit-100 focus:outline-none focus:ring-2 focus:ring-limonka-400 focus:border-transparent
-           placeholder:text-grafit-400;
+    @apply w-full bg-grafit-900 border border-grafit-600 rounded-lg px-3 py-2 text-sm
+           text-grafit-100 outline-none focus:border-grafit-500
+           placeholder:text-grafit-500;
   }
   select.input {
     @apply appearance-none;
@@ -84,6 +86,58 @@
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── LIGHT MODE ─────────────────────────────────────────────────── */
+html.light body {
+  background-color: #f2f3ee !important;
+  color: #1f201a !important;
+}
+html.light nav {
+  background-color: #ffffff !important;
+  border-color: #dddecf !important;
+}
+html.light .karta {
+  background: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+html.light .input {
+  background-color: #eeeee8 !important;
+  border-color: #c8c9bb !important;
+  color: #1f201a !important;
+}
+html.light .input::placeholder { color: #9a9b8c !important; }
+html.light .btn-ghost {
+  border-color: #c8c9bb !important;
+  color: #1f201a !important;
+}
+html.light .btn-ghost:hover { background-color: #e5e6df !important; }
+
+/* text */
+html.light .text-grafit-100 { color: #1f201a !important; }
+html.light .text-grafit-300 { color: #3d3e35 !important; }
+html.light .text-grafit-400 { color: #6b6c5f !important; }
+html.light .text-grafit-500 { color: #9a9b8c !important; }
+
+/* backgrounds */
+html.light .bg-grafit-700,
+html.light .bg-grafit-800,
+html.light .bg-grafit-850,
+html.light .bg-grafit-900 { background-color: #f2f3ee !important; }
+html.light .bg-nocny-900  { background-color: #e5e6df !important; }
+
+/* borders */
+html.light .border-grafit-600,
+html.light .border-grafit-700 { border-color: #c8c9bb !important; }
+html.light .divide-nocny-700  > * + * { border-color: #c8c9bb !important; }
+
+/* Autofill override — prevents browser yellow background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #16170f inset !important;
+  -webkit-text-fill-color: #f1ede2 !important;
+  caret-color: #f1ede2;
 }
 
 @keyframes float {

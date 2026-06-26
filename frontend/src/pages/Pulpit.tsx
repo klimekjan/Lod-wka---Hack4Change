@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { auth, dashboard, spizarnia } from '../lib/api'
+import { useTheme, cardStyle, infoCardStyle } from '../lib/theme'
 import {
   IconSpizarnia, IconAI, IconTracker, IconMapa, IconZnajomi, IconUstawienia,
 } from '../components/ikony'
@@ -37,6 +38,7 @@ export default function Pulpit() {
     queryFn: () => spizarnia.lista().then(r => r.data),
   })
 
+  const { light } = useTheme()
   const dzis = new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })
   const powitanie = user?.imie ? `Cześć, ${user.imie}` : 'Cześć'
 
@@ -58,30 +60,20 @@ export default function Pulpit() {
       {/* Stats strip */}
       {stats && (
         <div className="grid grid-cols-3 gap-2">
-          <div className="karta text-center py-3">
-            <div className="font-display text-2xl font-semibold text-limonka-400">
-              {stats.streak_dni}
+          {[
+            { value: stats.streak_dni, label: stats.streak_dni === 1 ? 'dzień' : 'dni', sub: 'bez marnowania', cls: 'text-limonka-400' },
+            { value: stats.kg_uratowane.toFixed(1), label: 'kg', sub: 'uratowane', cls: 'text-zielony-400' },
+            { value: naWylocie.length, label: 'produktów', sub: 'na wylocie', cls: 'text-grafit-100' },
+          ].map(({ value, label, sub, cls }) => (
+            <div
+              key={sub}
+              className="text-center py-3 rounded-xl"
+              style={infoCardStyle(light)}
+            >
+              <div className={`font-display text-2xl font-semibold ${cls}`}>{value}</div>
+              <div className="text-xs text-grafit-400 mt-0.5 leading-tight">{label}<br />{sub}</div>
             </div>
-            <div className="text-xs text-grafit-400 mt-0.5 leading-tight">
-              {stats.streak_dni === 1 ? 'dzień' : 'dni'}<br />bez marnowania
-            </div>
-          </div>
-          <div className="karta text-center py-3">
-            <div className="font-display text-2xl font-semibold text-zielony-400">
-              {stats.kg_uratowane.toFixed(1)}
-            </div>
-            <div className="text-xs text-grafit-400 mt-0.5 leading-tight">
-              kg<br />uratowane
-            </div>
-          </div>
-          <div className="karta text-center py-3">
-            <div className="font-display text-2xl font-semibold text-grafit-100">
-              {naWylocie.length}
-            </div>
-            <div className="text-xs text-grafit-400 mt-0.5 leading-tight">
-              produktów<br />na wylocie
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
@@ -89,7 +81,8 @@ export default function Pulpit() {
       {pokazBanner && (
         <Link
           to="/przepisy"
-          className="flex items-center justify-between karta border-limonka-400/30 bg-limonka-400/5 hover:bg-limonka-400/10 transition-colors"
+          className="flex items-center justify-between rounded-xl p-4 transition-colors"
+          style={infoCardStyle(light)}
         >
           <div>
             <p className="text-sm font-medium text-grafit-100">
@@ -112,7 +105,11 @@ export default function Pulpit() {
           </div>
           <div className="space-y-1.5">
             {naWylocie.map(p => (
-              <div key={p.id} className="karta py-2.5 flex items-center justify-between gap-3">
+              <div
+                key={p.id}
+                className="rounded-xl py-2.5 px-4 flex items-center justify-between gap-3"
+                style={infoCardStyle(light)}
+              >
                 <div>
                   <p className="text-sm font-medium text-grafit-100">{p.name}</p>
                   <p className="text-xs text-grafit-400">{p.quantity} {p.unit} · {p.category}</p>
@@ -131,14 +128,20 @@ export default function Pulpit() {
       )}
 
       {naWylocie.length === 0 && produkty.length > 0 && (
-        <div className="karta py-5 text-center">
+        <div
+          className="py-5 text-center rounded-xl"
+          style={infoCardStyle(light)}
+        >
           <p className="text-sm font-medium text-grafit-100">Wszystko świeże</p>
-          <p className="text-xs text-grafit-400 mt-0.5">Brak produktów na wylocie -- dobra robota</p>
+          <p className="text-xs text-grafit-400 mt-0.5">Brak produktów na wylocie — dobra robota</p>
         </div>
       )}
 
       {produkty.length === 0 && (
-        <div className="karta py-5 text-center">
+        <div
+          className="py-5 text-center rounded-xl"
+          style={infoCardStyle(light)}
+        >
           <p className="text-sm font-medium text-grafit-100">Spiżarnia jest pusta</p>
           <Link to="/spizarnia" className="text-xs text-limonka-400 hover:underline mt-1 inline-block">
             Dodaj pierwszy produkt
@@ -154,7 +157,8 @@ export default function Pulpit() {
             <Link
               key={href}
               to={href}
-              className="karta flex items-start gap-3 hover:border-grafit-500 hover:bg-grafit-600 transition-all active:scale-[0.98]"
+              className="flex items-start gap-3 rounded-xl p-4 transition-all active:scale-[0.97]"
+              style={cardStyle(light)}
             >
               <div className="mt-0.5 text-limonka-400 shrink-0">
                 <Icon className="w-4 h-4" />

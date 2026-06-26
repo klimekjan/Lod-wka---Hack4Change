@@ -3,6 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts'
 import { dashboard } from '../lib/api'
+import { useTheme, cardStyle } from '../lib/theme'
 
 function KartaStat({ label, value, unit, kolor }: {
   label: string; value: number; unit: string; kolor: string
@@ -19,8 +20,9 @@ function KartaStat({ label, value, unit, kolor }: {
 }
 
 function StreakBadge({ dni }: { dni: number }) {
+  const { light } = useTheme()
   return (
-    <div className="karta flex items-center gap-4 bg-limonka-400/10 border-limonka-400/30">
+    <div className="rounded-xl p-4 flex items-center gap-4" style={cardStyle(light)}>
       <div className="font-display text-4xl font-semibold text-limonka-400">{dni}</div>
       <div>
         <p className="font-semibold text-grafit-100">{dni === 1 ? 'dzień' : 'dni'}</p>
@@ -36,6 +38,7 @@ export default function Dashboard() {
     queryFn: () => dashboard.stats().then(r => r.data),
   })
 
+  const { light } = useTheme()
   if (isLoading) return <p className="text-sm text-grafit-400 text-center py-10">Ładowanie...</p>
   if (error) return <p className="text-sm text-red-400 text-center py-10">Błąd ładowania danych</p>
   if (!data) return null
@@ -64,7 +67,10 @@ export default function Dashboard() {
           </div>
 
           {data.kg_zmarnowane > 0 && (
-            <div className="karta bg-red-500/10 border-red-500/30">
+            <div
+              className="rounded-xl p-4"
+              style={cardStyle(light, '248,113,113')}
+            >
               <p className="text-xs font-semibold text-red-400 uppercase tracking-wide">Zmarnowane</p>
               <p className="font-display text-xl font-semibold text-red-400 mt-0.5">
                 {data.kg_zmarnowane.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} kg
@@ -100,7 +106,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
 
-          <div className="karta bg-grafit-800 border-grafit-600">
+          <div className="karta">
             <p className="text-xs font-semibold uppercase tracking-wide text-grafit-400 mb-2">Dla porównania</p>
             <p className="text-sm text-grafit-300">
               Przeciętne polskie gospodarstwo domowe marnuje ok.{' '}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Logo from '../components/Logo'
+import { useTheme } from '../lib/theme'
 import {
   IconSpizarnia, IconAI, IconTracker, IconZnajomi,
 } from '../components/ikony'
@@ -16,6 +17,7 @@ function IconBell({ className = 'w-5 h-5' }: { className?: string }) {
 
 
 export default function StronaGlowna() {
+  const { light } = useTheme()
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -212,8 +214,8 @@ export default function StronaGlowna() {
             {/* wide image tile -- spiżarnia photo */}
             <div className="col-span-2 sm:col-span-2 row-span-1 relative rounded-2xl overflow-hidden min-h-[180px]">
               <img
-                src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=900&q=80&auto=format&fit=crop"
-                alt="Wspólnota"
+                src="https://plus.unsplash.com/premium_photo-1663126472261-6e58ab83bfea?w=1200&q=80&auto=format&fit=crop"
+                alt="Wolontariusze"
                 className="w-full h-full object-cover absolute inset-0"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-nocny-900/90 via-nocny-900/30 to-transparent" />
@@ -226,7 +228,13 @@ export default function StronaGlowna() {
             </div>
 
             {/* single AI tile */}
-            <div className="rounded-2xl bg-nocny-700 border border-nocny-600 p-5 flex flex-col justify-between">
+            <div
+              className="rounded-2xl p-5 flex flex-col justify-between"
+              style={light
+                ? { background: '#ffffff', boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }
+                : { background: 'radial-gradient(ellipse at top left, rgba(40,80,20,0.55) 0%, transparent 60%), #060e06', boxShadow: '0 4px 24px rgba(0,0,0,0.6)' }
+              }
+            >
               <div className="text-zielony-400">
                 <IconAI className="w-6 h-6" />
               </div>
@@ -243,7 +251,14 @@ export default function StronaGlowna() {
               { Icon: IconZnajomi,   tytul: 'Znajomi',   opis: 'Buduj lokalną społeczność.' },
               { Icon: IconBell,      tytul: 'Alerty',    opis: 'Push 3 dni przed terminem.' },
             ].map(({ Icon, tytul, opis }) => (
-              <div key={tytul} className="rounded-2xl bg-nocny-700 border border-nocny-600 p-4 flex flex-col gap-2">
+              <div
+                key={tytul}
+                className="rounded-2xl p-4 flex flex-col gap-2"
+                style={{
+                  background: 'radial-gradient(ellipse at top left, rgba(40,80,20,0.45) 0%, transparent 60%), #060e06',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
+                }}
+              >
                 <div className="text-zielony-500">
                   <Icon className="w-5 h-5" />
                 </div>
