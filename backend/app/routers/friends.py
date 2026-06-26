@@ -194,6 +194,16 @@ def akceptuj_zaproszenie(
         raise HTTPException(status_code=409, detail="Zaproszenie już przetworzone")
     zaproszenie.status = "accepted"
     session.add(zaproszenie)
+    notif = session.exec(
+        select(Notification).where(
+            Notification.user_id == current_user.id,
+            Notification.type == "friend_request",
+            Notification.read == False,
+        )
+    ).first()
+    if notif:
+        notif.read = True
+        session.add(notif)
     session.commit()
     session.refresh(zaproszenie)
     requester = session.get(User, zaproszenie.requester_id)
@@ -217,6 +227,16 @@ def odrzuc_zaproszenie(
     if not zaproszenie or zaproszenie.addressee_id != current_user.id:
         raise HTTPException(status_code=404, detail="Zaproszenie nie znalezione")
     session.delete(zaproszenie)
+    notif = session.exec(
+        select(Notification).where(
+            Notification.user_id == current_user.id,
+            Notification.type == "friend_request",
+            Notification.read == False,
+        )
+    ).first()
+    if notif:
+        notif.read = True
+        session.add(notif)
     session.commit()
 
 
