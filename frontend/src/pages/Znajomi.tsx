@@ -25,14 +25,15 @@ function KartaProfilu({
   zaproszenieId?: number
 }) {
   const pelneImie = [profil.imie, profil.nazwisko].filter(Boolean).join(' ')
+  const displayName = pelneImie || profil.nick || `Użytkownik #${profil.id}`
   const etykieta = etykietaStatusu(profil.status_znajomosci)
 
   return (
     <div className="karta flex items-center justify-between gap-3">
       <div>
         <div className="flex items-center gap-2 flex-wrap">
-          {pelneImie && <span className="font-medium text-slate-900">{pelneImie}</span>}
-          {profil.nick && (
+          <span className="font-medium text-slate-900">{displayName}</span>
+          {pelneImie && profil.nick && (
             <span className="text-sm text-slate-500">@{profil.nick}</span>
           )}
         </div>

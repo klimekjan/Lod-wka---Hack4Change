@@ -82,9 +82,7 @@ export default function MapaWymiany({ ogloszenia, userId, onZarezerwuj }: Props)
                   <p className="text-sm text-slate-600">
                     {o.quantity} {o.unit}
                   </p>
-                  {etykieta && (
-                    <p className="text-xs text-slate-500">{etykieta}</p>
-                  )}
+                  <p className="text-xs text-slate-500">{etykieta ?? 'Anonim'}</p>
                   {o.address && <p className="text-xs text-slate-400">{o.address}</p>}
                   {czyZnajomy && (
                     <p className="text-xs font-medium" style={{ color: '#d97706' }}>Znajomy</p>
