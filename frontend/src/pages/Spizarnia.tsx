@@ -12,12 +12,12 @@ const KATEGORIE = [
 const JEDNOSTKI = ['szt.', 'kg', 'g', 'l', 'ml', 'opak.']
 
 function kolorDaty(dniDo?: number | null): string {
-  if (dniDo === undefined || dniDo === null) return 'bg-slate-800/50 text-white'
+  if (dniDo === undefined || dniDo === null) return 'bg-grafit-700/80 text-grafit-100'
   if (dniDo < 0)  return 'bg-red-600/80 text-white'
   if (dniDo <= 2) return 'bg-orange-500/80 text-white'
   if (dniDo <= 5) return 'bg-bursztyn-500/80 text-white'
   if (dniDo <= 10) return 'bg-zielony-600/80 text-white'
-  return 'bg-blue-500/80 text-white'
+  return 'bg-grafit-500/80 text-grafit-100'
 }
 
 function formatData(expiresAt?: string | null): string {
@@ -37,7 +37,7 @@ function KafelekProduktu({
 
   return (
     <div
-      className="relative aspect-square rounded-xl overflow-hidden cursor-pointer select-none bg-slate-100"
+      className="relative aspect-square rounded-xl overflow-hidden cursor-pointer select-none bg-grafit-700"
       onClick={() => setOtwarty(o => !o)}
     >
       {produkt.image_url ? (
@@ -48,48 +48,44 @@ function KafelekProduktu({
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-4xl text-slate-300">
+        <div className="w-full h-full flex items-center justify-center text-4xl text-grafit-500">
           🥫
         </div>
       )}
 
-      {/* Data ważności — góra lewa */}
       {produkt.expires_at && (
         <span className={`absolute top-1.5 left-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md backdrop-blur-sm ${kolorDaty(produkt.days_left)}`}>
           {formatData(produkt.expires_at)}
         </span>
       )}
 
-      {/* Ilość — góra prawa */}
       <span className="absolute top-1.5 right-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-black/40 text-white backdrop-blur-sm">
         {produkt.quantity} {produkt.unit}
       </span>
 
-      {/* Nazwa — dół */}
       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-2 pt-4 pb-1.5">
         <p className="text-white text-xs font-medium truncate leading-tight">{produkt.name}</p>
       </div>
 
-      {/* Akcje — overlay po tapnięciu */}
       {otwarty && (
         <div
           className="absolute inset-0 bg-black/65 flex flex-col items-center justify-center gap-2 p-2"
           onClick={e => e.stopPropagation()}
         >
           <button
-            className="w-full bg-zielony-600 text-white text-xs font-semibold py-1.5 rounded-lg active:bg-zielony-700"
+            className="w-full bg-limonka-400 text-grafit-900 text-xs font-semibold py-1.5 rounded-full active:bg-limonka-500"
             onClick={() => { onAkcja('eaten'); setOtwarty(false) }}
           >
             Zjedzone
           </button>
           <button
-            className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-lg active:bg-white/30"
+            className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-full active:bg-white/30"
             onClick={() => { onAkcja('wasted'); setOtwarty(false) }}
           >
             Wyrzucone
           </button>
           <button
-            className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-lg active:bg-white/30"
+            className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-full active:bg-white/30"
             onClick={() => { onAkcja('shared'); setOtwarty(false) }}
           >
             Oddaj
@@ -98,7 +94,7 @@ function KafelekProduktu({
             className="mt-1 text-white/60 text-xs"
             onClick={() => setOtwarty(false)}
           >
-            ✕ zamknij
+            zamknij
           </button>
         </div>
       )}
@@ -154,7 +150,7 @@ export default function Spizarnia() {
       queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
       setBrakAdresu(false)
       if (action === 'shared') {
-        setAkcjaOk('Wystawiono na wymianę — produkt jest już na mapie.')
+        setAkcjaOk('Wystawiono na wymianę -- produkt jest już na mapie.')
         setTimeout(() => setAkcjaOk(''), 4000)
       }
     },
@@ -224,16 +220,16 @@ export default function Spizarnia() {
       )}
 
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-900">Spiżarnia</h1>
+        <h1 className="font-display text-2xl font-semibold text-grafit-100">Spiżarnia</h1>
         <div className="flex gap-2">
           <button
-            className="btn-secondary text-sm"
+            className="btn-ghost text-sm"
             onClick={() => { setSkanBlad(''); setSkanerOtwarty(true) }}
           >
             Skanuj
           </button>
           <button
-            className="btn-primary text-sm"
+            className="btn text-sm"
             onClick={() => { setForm(defaultForm); setSkanBlad(''); setFormularzOtwarty(f => !f) }}
           >
             {formularzOtwarty ? 'Anuluj' : '+ Dodaj'}
@@ -242,21 +238,21 @@ export default function Spizarnia() {
       </div>
 
       {skanBlad && (
-        <div className="bg-bursztyn-50 border border-bursztyn-400 text-bursztyn-600 text-sm px-3 py-2 rounded-lg">
+        <div className="bg-bursztyn-500/10 border border-bursztyn-500/40 text-bursztyn-400 text-sm px-3 py-2 rounded-lg">
           {skanBlad}
         </div>
       )}
 
       {akcjaOk && (
-        <div className="bg-zielony-50 border border-zielony-200 text-zielony-700 text-sm px-3 py-2 rounded-lg">
+        <div className="bg-zielony-500/10 border border-zielony-500/30 text-zielony-400 text-sm px-3 py-2 rounded-lg">
           {akcjaOk}
         </div>
       )}
 
       {brakAdresu && (
-        <div className="bg-bursztyn-50 border border-bursztyn-400 text-bursztyn-600 text-sm px-3 py-2 rounded-lg flex items-center justify-between gap-3">
+        <div className="bg-bursztyn-500/10 border border-bursztyn-500/40 text-bursztyn-400 text-sm px-3 py-2 rounded-lg flex items-center justify-between gap-3">
           <span>Żeby oddać produkt na mapie, najpierw ustaw adres w profilu.</span>
-          <Link to="/ustawienia" className="btn-primary text-xs py-1 px-3 shrink-0">
+          <Link to="/ustawienia" className="btn text-xs py-1 px-3 shrink-0">
             Ustawienia
           </Link>
         </div>
@@ -265,18 +261,18 @@ export default function Spizarnia() {
       {formularzOtwarty && (
         <form onSubmit={submit} className="karta space-y-3">
           {!form.imageUrl && (
-            <h2 className="font-semibold text-slate-800">Nowy produkt</h2>
+            <h2 className="font-semibold text-grafit-100">Nowy produkt</h2>
           )}
           <div className="flex items-start gap-3">
             {form.imageUrl && (
               <img
                 src={form.imageUrl}
                 alt={form.name}
-                className="w-14 h-14 object-contain rounded-lg border border-slate-100 shrink-0 mt-5"
+                className="w-14 h-14 object-contain rounded-lg border border-grafit-600 shrink-0 mt-5"
               />
             )}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Nazwa</label>
+              <label className="block text-sm font-medium text-grafit-300 mb-1">Nazwa</label>
               <input
                 className="input"
                 value={form.name}
@@ -289,7 +285,7 @@ export default function Spizarnia() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Ilość</label>
+              <label className="block text-sm font-medium text-grafit-300 mb-1">Ilość</label>
               <input
                 className="input"
                 type="number"
@@ -301,22 +297,22 @@ export default function Spizarnia() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Jednostka</label>
+              <label className="block text-sm font-medium text-grafit-300 mb-1">Jednostka</label>
               <select className="input" value={form.unit} onChange={e => setField('unit', e.target.value)}>
                 {JEDNOSTKI.map(j => <option key={j}>{j}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Kategoria</label>
+            <label className="block text-sm font-medium text-grafit-300 mb-1">Kategoria</label>
             <select className="input" value={form.category} onChange={e => setField('category', e.target.value)}>
               {KATEGORIE.map(k => <option key={k}>{k}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-grafit-300 mb-1">
               Termin ważności
-              <span className="text-slate-400 font-normal ml-1">(opcjonalnie)</span>
+              <span className="text-grafit-400 font-normal ml-1">(opcjonalnie)</span>
             </label>
             <input
               className="input"
@@ -326,15 +322,15 @@ export default function Spizarnia() {
             />
           </div>
           {mutacjaDodaj.error && (
-            <p className="text-sm text-red-600">Błąd zapisu — spróbuj ponownie.</p>
+            <p className="text-sm text-red-400">Błąd zapisu -- spróbuj ponownie.</p>
           )}
           <div className="flex gap-2">
-            <button type="submit" className="btn-primary" disabled={mutacjaDodaj.isPending}>
+            <button type="submit" className="btn" disabled={mutacjaDodaj.isPending}>
               {mutacjaDodaj.isPending ? 'Zapisuję...' : 'Dodaj'}
             </button>
             <button
               type="button"
-              className="btn-secondary"
+              className="btn-ghost"
               onClick={() => { setForm(defaultForm); setFormularzOtwarty(false) }}
             >
               Anuluj
@@ -343,13 +339,13 @@ export default function Spizarnia() {
         </form>
       )}
 
-      {isLoading && <p className="text-sm text-slate-500 text-center py-10">Ładowanie...</p>}
-      {error && <p className="text-sm text-red-600 text-center py-10">Błąd ładowania spiżarni</p>}
+      {isLoading && <p className="text-sm text-grafit-400 text-center py-10">Ładowanie...</p>}
+      {error && <p className="text-sm text-red-400 text-center py-10">Błąd ładowania spiżarni</p>}
 
       {!isLoading && produkty.length === 0 && (
         <div className="karta text-center py-12">
-          <p className="font-medium text-slate-700">Spiżarnia jest pusta</p>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="font-medium text-grafit-100">Spiżarnia jest pusta</p>
+          <p className="text-sm text-grafit-400 mt-1">
             Dodaj produkty ręcznie lub klikając "Skanuj"
           </p>
         </div>
@@ -357,7 +353,7 @@ export default function Spizarnia() {
 
       {przeterminowane.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-red-600 uppercase tracking-widest mb-2">
+          <h2 className="text-xs font-semibold text-red-400 uppercase tracking-widest mb-2">
             Przeterminowane ({przeterminowane.length})
           </h2>
           <div className="grid grid-cols-3 gap-2">
@@ -374,7 +370,7 @@ export default function Spizarnia() {
 
       {naWylocie.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-bursztyn-600 uppercase tracking-widest mb-2">
+          <h2 className="text-xs font-semibold text-bursztyn-400 uppercase tracking-widest mb-2">
             Na wylocie ({naWylocie.length})
           </h2>
           <div className="grid grid-cols-3 gap-2">
@@ -391,7 +387,7 @@ export default function Spizarnia() {
 
       {swieże.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">
+          <h2 className="text-xs font-semibold text-grafit-400 uppercase tracking-widest mb-2">
             Świeże ({swieże.length})
           </h2>
           <div className="grid grid-cols-3 gap-2">

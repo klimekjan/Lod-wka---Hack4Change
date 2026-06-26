@@ -28,7 +28,7 @@ function HomeRoute() {
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-grafit-850 app-shell">
       <Navbar />
       <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-6">{children}</main>
     </div>

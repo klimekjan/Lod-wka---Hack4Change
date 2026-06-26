@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { auth } from '../lib/api'
+import Logo from '../components/Logo'
 
 export default function Rejestracja() {
   const navigate = useNavigate()
@@ -44,21 +45,24 @@ export default function Rejestracja() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-grafit-900 app-shell flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-zielony-700">Eat Me App</h1>
-          <p className="text-sm text-slate-500 mt-1">Utwórz nowe konto</p>
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <Logo size={48} withText={false} />
+          </div>
+          <h1 className="font-display text-2xl font-semibold text-grafit-100">Eat Me</h1>
+          <p className="text-sm text-grafit-400 mt-1">Utwórz nowe konto</p>
         </div>
         <form onSubmit={submit} className="karta space-y-4">
           {blad && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded-lg">
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-3 py-2 rounded-lg">
               {blad}
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Imię</label>
+              <label className="block text-sm font-medium text-grafit-300 mb-1">Imię</label>
               <input
                 type="text"
                 className="input"
@@ -69,7 +73,7 @@ export default function Rejestracja() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Nazwisko</label>
+              <label className="block text-sm font-medium text-grafit-300 mb-1">Nazwisko</label>
               <input
                 type="text"
                 className="input"
@@ -81,7 +85,7 @@ export default function Rejestracja() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-grafit-300 mb-1">Email</label>
             <input
               type="email"
               className="input"
@@ -93,7 +97,7 @@ export default function Rejestracja() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Hasło</label>
+            <label className="block text-sm font-medium text-grafit-300 mb-1">Hasło</label>
             <input
               type="password"
               className="input"
@@ -105,8 +109,9 @@ export default function Rejestracja() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Adres <span className="text-slate-400 font-normal">(opcjonalnie — pojawi się na mapie wymiany)</span>
+            <label className="block text-sm font-medium text-grafit-300 mb-1">
+              Adres{' '}
+              <span className="text-grafit-400 font-normal">(opcjonalnie -- pojawi się na mapie wymiany)</span>
             </label>
             <input
               type="text"
@@ -115,13 +120,13 @@ export default function Rejestracja() {
               onChange={e => setAdres(e.target.value)}
               placeholder="np. Długi Targ 1, Gdańsk"
             />
-            <p className="text-xs text-slate-400 mt-1">Adres będzie widoczny publicznie na mapie.</p>
+            <p className="text-xs text-grafit-400 mt-1">Adres będzie widoczny publicznie na mapie.</p>
           </div>
           {adres && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Nick <span className="text-red-500">*</span>
-                <span className="text-slate-400 font-normal ml-1">(wymagany przy podaniu adresu)</span>
+              <label className="block text-sm font-medium text-grafit-300 mb-1">
+                Nick <span className="text-red-400">*</span>
+                <span className="text-grafit-400 font-normal ml-1">(wymagany przy podaniu adresu)</span>
               </label>
               <input
                 type="text"
@@ -132,14 +137,19 @@ export default function Rejestracja() {
               />
             </div>
           )}
-          <button type="submit" className="btn-primary w-full" disabled={ladowanie}>
+          <button type="submit" className="btn w-full" disabled={ladowanie}>
             {ladowanie ? 'Tworzenie konta...' : 'Zarejestruj się'}
           </button>
         </form>
-        <p className="text-sm text-center text-slate-500 mt-4">
+        <p className="text-sm text-center text-grafit-400 mt-4">
           Masz już konto?{' '}
-          <Link to="/logowanie" className="text-zielony-600 font-medium hover:underline">
+          <Link to="/logowanie" className="text-limonka-400 font-medium hover:text-limonka-300">
             Zaloguj się
+          </Link>
+        </p>
+        <p className="text-center mt-2">
+          <Link to="/" className="text-grafit-400 hover:text-grafit-300 transition-colors text-xs">
+            Wróć do strony głównej
           </Link>
         </p>
       </div>
