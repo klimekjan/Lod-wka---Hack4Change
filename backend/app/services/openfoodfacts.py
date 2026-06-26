@@ -63,6 +63,11 @@ async def lookup_barcode(barcode: str, session: Session) -> dict | None:
     name = (
         product.get("product_name_pl")
         or product.get("product_name")
+        or product.get("product_name_en")
+        or product.get("product_name_de")
+        or product.get("product_name_fr")
+        or product.get("generic_name_pl")
+        or product.get("generic_name")
         or ""
     ).strip()
 
