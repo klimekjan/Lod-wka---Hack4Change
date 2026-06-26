@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlmodel import Session, select
 
 from ..db import get_session
@@ -9,12 +11,13 @@ from ..schemas import RejestrujRequest, TokenResponse, UserResponse, UstawieniaR
 from ..services.geocoding import geokoduj
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/rejestruj", response_model=TokenResponse, status_code=201)
 def rejestruj(dane: RejestrujRequest, session: Session = Depends(get_session)):
     if session.exec(select(User).where(User.email == dane.email)).first():
-        raise HTTPException(status_code=400, detail="Email juz jest zarejestrowany")
+        raise HTTPException(status_code=400, detail="Nie można zarejestrować konta z podanymi danymi")
     user = User(
         email=dane.email,
         password_hash=hash_password(dane.haslo),
@@ -27,7 +30,9 @@ def rejestruj(dane: RejestrujRequest, session: Session = Depends(get_session)):
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("10/minute")
 def login(
+    request: Request,
     form: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
 ):

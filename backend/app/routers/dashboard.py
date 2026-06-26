@@ -15,10 +15,26 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 
+_UNIT_TO_KG: dict[str, float] = {
+    "kg": 1.0,
+    "g": 0.001,
+    "dag": 0.01,
+    "l": 1.0,
+    "ml": 0.001,
+    "szt.": 0.15,
+    "opak.": 0.3,
+}
+
+
+def _szacuj_kg(quantity: float, unit: str) -> float:
+    return quantity * _UNIT_TO_KG.get(unit.strip().lower(), 0.15)
+
 
 def _wczytaj_impact() -> pd.DataFrame:
     path = os.path.join(DATA_DIR, "impact_factors.csv")
-    return pd.read_csv(path)
+    return pd.read_csv(path).set_index("kategoria")
+
+_IMPACT: pd.DataFrame = _wczytaj_impact()
 
 
 @router.get("", response_model=DashboardStats)
@@ -30,7 +46,7 @@ def pobierz_dashboard(
         select(ConsumptionLog).where(ConsumptionLog.user_id == current_user.id)
     ).all()
 
-    impact = _wczytaj_impact().set_index("kategoria")
+    impact = _IMPACT
 
     def wspolczynniki(kategoria: str):
         if kategoria in impact.index:
@@ -44,7 +60,7 @@ def pobierz_dashboard(
     co2_unikniete = 0.0
 
     for log in logi:
-        kg = log.weight_kg if log.weight_kg else log.quantity * 0.1
+        kg = log.weight_kg if log.weight_kg else _szacuj_kg(log.quantity, log.unit)
         co2_f, cena_f = wspolczynniki(log.category)
         if log.action == "eaten":
             kg_uratowane += kg
@@ -53,11 +69,11 @@ def pobierz_dashboard(
         else:
             kg_zmarnowane += kg
 
-    # Streak - ile dni pod rzad bez "wasted"
-    streak = _oblicz_streak(logi)
+    # Streak - ile dni pod rzad bez "wasted" (liczone od założenia konta)
+    streak = _oblicz_streak(logi, current_user.created_at)
 
     # Dane tygodniowe (ostatnie 7 dni)
-    tygodniowe = _dane_tygodniowe(logi, impact)
+    tygodniowe = _dane_tygodniowe(logi, _IMPACT)
 
     return DashboardStats(
         kg_uratowane=round(kg_uratowane, 2),
@@ -69,19 +85,18 @@ def pobierz_dashboard(
     )
 
 
-def _oblicz_streak(logi: list) -> int:
+def _oblicz_streak(logi: list, user_created_at: datetime) -> int:
     if not logi:
         return 0
     dni_z_marnotrawstwem = {
         log.logged_at.date() for log in logi if log.action == "wasted"
     }
+    poczatek = user_created_at.date()
     streak = 0
     dzien = datetime.utcnow().date()
-    while dzien not in dni_z_marnotrawstwem:
+    while dzien not in dni_z_marnotrawstwem and dzien >= poczatek:
         streak += 1
         dzien -= timedelta(days=1)
-        if streak > 365:
-            break
     return streak
 
 
@@ -90,8 +105,8 @@ def _dane_tygodniowe(logi: list, impact: pd.DataFrame) -> List[dict]:
     for i in range(6, -1, -1):
         dzien = (datetime.utcnow() - timedelta(days=i)).date()
         logi_dnia = [l for l in logi if l.logged_at.date() == dzien]
-        uratowane = sum(l.weight_kg or l.quantity * 0.1 for l in logi_dnia if l.action == "eaten")
-        zmarnowane = sum(l.weight_kg or l.quantity * 0.1 for l in logi_dnia if l.action == "wasted")
+        uratowane = sum(l.weight_kg or _szacuj_kg(l.quantity, l.unit) for l in logi_dnia if l.action == "eaten")
+        zmarnowane = sum(l.weight_kg or _szacuj_kg(l.quantity, l.unit) for l in logi_dnia if l.action == "wasted")
         result.append({
             "dzien": dzien.strftime("%d.%m"),
             "uratowane": round(uratowane, 2),

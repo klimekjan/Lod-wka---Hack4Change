@@ -143,6 +143,7 @@ class OgloszenieResponse(BaseModel):
     lat: Optional[float] = None
     lon: Optional[float] = None
     status: str
+    reserved_by: Optional[int] = None
     expires_at: Optional[datetime]
     created_at: datetime
     kontakt_email: Optional[str] = None

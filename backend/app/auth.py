@@ -11,7 +11,19 @@ from sqlmodel import Session, select
 from .db import get_session
 from .models import User
 
-SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret-change-in-production-min-32-chars")
+_DEV_SECRET = "dev-secret-change-in-production-min-32-chars"
+SECRET_KEY = os.getenv("JWT_SECRET", _DEV_SECRET)
+
+if SECRET_KEY == _DEV_SECRET:
+    if os.getenv("APP_ENV") == "production":
+        raise RuntimeError("Ustaw zmienną środowiskową JWT_SECRET przed uruchomieniem w produkcji!")
+    import warnings
+    warnings.warn(
+        "JWT_SECRET nie jest ustawiony — używany domyślny klucz developerski. "
+        "Nigdy nie uruchamiaj z tym kluczem na produkcji.",
+        stacklevel=1,
+    )
+
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 dni
 

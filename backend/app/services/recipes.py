@@ -56,7 +56,10 @@ async def generuj_przepisy(produkty: list[PantryItem]) -> list[dict]:
         messages=[{"role": "user", "content": prompt}],
     )
 
-    text = msg.content[0].text.strip()
+    blok = next((b for b in msg.content if b.type == "text"), None)
+    if not blok:
+        return []
+    text = blok.text.strip()
 
     # Usuń markdown code fences jeśli model je dodał
     if text.startswith("```"):
