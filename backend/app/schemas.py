@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, model_validator
 
 
 # --- Auth ---
@@ -8,7 +8,16 @@ from pydantic import BaseModel, EmailStr
 class RejestrujRequest(BaseModel):
     email: EmailStr
     haslo: str
-    miasto: Optional[str] = None
+    imie: str
+    nazwisko: str
+    adres: Optional[str] = None
+    nick: Optional[str] = None
+
+    @model_validator(mode="after")
+    def nick_wymagany_gdy_adres(self):
+        if self.adres and not self.nick:
+            raise ValueError("Nick jest wymagany gdy podajesz adres")
+        return self
 
 
 class TokenResponse(BaseModel):
@@ -19,6 +28,9 @@ class TokenResponse(BaseModel):
 class UserResponse(BaseModel):
     id: int
     email: str
+    imie: Optional[str] = None
+    nazwisko: Optional[str] = None
+    nick: Optional[str] = None
     miasto: Optional[str]
     adres: Optional[str] = None
     lat: Optional[float] = None
@@ -34,6 +46,9 @@ class UserResponse(BaseModel):
 
 
 class UstawieniaRequest(BaseModel):
+    imie: Optional[str] = None
+    nazwisko: Optional[str] = None
+    nick: Optional[str] = None
     miasto: Optional[str] = None
     adres: Optional[str] = None
     notify_push: Optional[bool] = None
@@ -147,6 +162,35 @@ class OgloszenieResponse(BaseModel):
     expires_at: Optional[datetime]
     created_at: datetime
     kontakt_email: Optional[str] = None
+    wlasciciel_imie: Optional[str] = None
+    wlasciciel_nazwisko: Optional[str] = None
+    wlasciciel_nick: Optional[str] = None
+    wlasciciel_znajomy: bool = False
+
+    class Config:
+        from_attributes = True
+
+
+# --- Znajomi ---
+
+class ProfilPublicznyResponse(BaseModel):
+    id: int
+    imie: Optional[str] = None
+    nazwisko: Optional[str] = None
+    nick: Optional[str] = None
+    status_znajomosci: str = "brak"  # brak | wyslane | oczekuje | znajomy
+
+    class Config:
+        from_attributes = True
+
+
+class ZaproszenieResponse(BaseModel):
+    id: int
+    requester_id: int
+    addressee_id: int
+    status: str
+    created_at: datetime
+    profil: Optional[ProfilPublicznyResponse] = None
 
     class Config:
         from_attributes = True
