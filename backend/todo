@@ -18,7 +18,20 @@ friends network
 ML znalezc realne zastosowanie (mozliwie do optymalizacji zakupow)
 logo projekt
 
+todo2 
+qr fix (reczne wpisywanie (produktu i kodu), podpiecie pod openfoodsource) + data ważności połączona
+czytnik paragonow (PIL Image + openfoodsource)
+UI improvement (languages + themes)
+
+cele:
+* łatwość w użyciu
+* skuteczność 
+* szybkie/dostępne
 
 L:
 R - relevant
 R2 - relevant but less
+
+main page 
+            SIGN UP 
+__ about (dane GUS, approach to solve)
