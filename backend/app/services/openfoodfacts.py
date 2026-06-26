@@ -72,23 +72,14 @@ async def lookup_barcode(barcode: str, session: Session) -> dict | None:
     category = _mapuj_kategorie(product.get("categories_tags", []))
     image_url = product.get("image_front_small_url") or product.get("image_url")
 
-    wpis = ProductCache(
+    session.add(ProductCache(
         barcode=barcode,
         name=name,
         category=category,
         image_url=image_url,
         raw_json=json.dumps(product, ensure_ascii=False)[:4000],
         fetched_at=datetime.utcnow(),
-    )
-    existing = session.get(ProductCache, barcode)
-    if existing:
-        existing.name = name
-        existing.category = category
-        existing.image_url = image_url
-        existing.fetched_at = datetime.utcnow()
-        session.add(existing)
-    else:
-        session.add(wpis)
+    ))
     session.commit()
 
     return {"name": name, "category": category, "image_url": image_url}

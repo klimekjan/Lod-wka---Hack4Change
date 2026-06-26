@@ -32,7 +32,9 @@ def _szacuj_kg(quantity: float, unit: str) -> float:
 
 def _wczytaj_impact() -> pd.DataFrame:
     path = os.path.join(DATA_DIR, "impact_factors.csv")
-    return pd.read_csv(path)
+    return pd.read_csv(path).set_index("kategoria")
+
+_IMPACT: pd.DataFrame = _wczytaj_impact()
 
 
 @router.get("", response_model=DashboardStats)
@@ -44,7 +46,7 @@ def pobierz_dashboard(
         select(ConsumptionLog).where(ConsumptionLog.user_id == current_user.id)
     ).all()
 
-    impact = _wczytaj_impact().set_index("kategoria")
+    impact = _IMPACT
 
     def wspolczynniki(kategoria: str):
         if kategoria in impact.index:
@@ -71,7 +73,7 @@ def pobierz_dashboard(
     streak = _oblicz_streak(logi, current_user.created_at)
 
     # Dane tygodniowe (ostatnie 7 dni)
-    tygodniowe = _dane_tygodniowe(logi, impact)
+    tygodniowe = _dane_tygodniowe(logi, _IMPACT)
 
     return DashboardStats(
         kg_uratowane=round(kg_uratowane, 2),

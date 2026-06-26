@@ -25,7 +25,7 @@ def lista_ogloszen(
     if miasto:
         query = query.where(ShareListing.city == miasto)
     listings = session.exec(query).all()
-    return [_to_response(l, session) for l in listings]
+    return [_to_response(l, {}) for l in listings]
 
 
 @router.get("/moje", response_model=List[OgloszenieResponse])
@@ -38,7 +38,8 @@ def moje_ogloszenia(
         .where(ShareListing.user_id == current_user.id)
         .order_by(ShareListing.created_at.desc())
     ).all()
-    return [_to_response(l, session, ujawnij_kontakt=True) for l in listings]
+    users = {current_user.id: current_user}
+    return [_to_response(l, users, ujawnij_kontakt=True) for l in listings]
 
 
 @router.post("", response_model=OgloszenieResponse, status_code=201)
@@ -66,7 +67,7 @@ def dodaj_ogloszenie(
     session.add(listing)
     session.commit()
     session.refresh(listing)
-    return _to_response(listing, session)
+    return _to_response(listing, {})
 
 
 @router.post("/{listing_id}/zarezerwuj", response_model=OgloszenieResponse)
@@ -85,7 +86,9 @@ def zarezerwuj(
     session.add(listing)
     session.commit()
     session.refresh(listing)
-    return _to_response(listing, session, ujawnij_kontakt=True)
+    poster = session.get(User, listing.user_id)
+    users = {listing.user_id: poster} if poster else {}
+    return _to_response(listing, users, ujawnij_kontakt=True)
 
 
 @router.post("/{listing_id}/odebrane", response_model=OgloszenieResponse)
@@ -101,7 +104,7 @@ def oznacz_odebrane(
     session.add(listing)
     session.commit()
     session.refresh(listing)
-    return _to_response(listing, session)
+    return _to_response(listing, {})
 
 
 @router.delete("/{listing_id}", status_code=204)
@@ -126,12 +129,12 @@ def _get_or_404(listing_id: int, session: Session) -> ShareListing:
 
 def _to_response(
     listing: ShareListing,
-    session: Session,
+    users: dict[int, User],
     ujawnij_kontakt: bool = False,
 ) -> OgloszenieResponse:
     kontakt = None
     if ujawnij_kontakt and listing.status == "reserved" and listing.reserved_by:
-        wystawiajacy = session.get(User, listing.user_id)
+        wystawiajacy = users.get(listing.user_id)
         if wystawiajacy:
             kontakt = wystawiajacy.email
     return OgloszenieResponse(
