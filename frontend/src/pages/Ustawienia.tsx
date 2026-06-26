@@ -10,6 +10,9 @@ export default function Ustawienia() {
     queryFn: () => auth.mnie().then(r => r.data),
   })
 
+  const [imie, setImie] = useState('')
+  const [nazwisko, setNazwisko] = useState('')
+  const [nick, setNick] = useState('')
   const [miasto, setMiasto] = useState('')
   const [adres, setAdres] = useState('')
   const [notifyPush, setNotifyPush] = useState(true)
@@ -17,11 +20,15 @@ export default function Ustawienia() {
   const [dniPrzed, setDniPrzed] = useState(3)
   const [godzina, setGodzina] = useState(8)
   const [zapisano, setZapisano] = useState(false)
+  const [bladNick, setBladNick] = useState('')
   const [pushStatus, setPushStatus] = useState<'unknown' | 'active' | 'error'>('unknown')
   const [pushLadowanie, setPushLadowanie] = useState(false)
 
   useEffect(() => {
     if (user) {
+      setImie(user.imie || '')
+      setNazwisko(user.nazwisko || '')
+      setNick(user.nick || '')
       setMiasto(user.miasto || '')
       setAdres(user.adres || '')
       setNotifyPush(user.notify_push)
@@ -39,16 +46,26 @@ export default function Ustawienia() {
 
   const mutacja = useMutation({
     mutationFn: (dane: Record<string, unknown>) =>
-      auth.ustawienia(dane as any).then(r => r.data),
+      auth.ustawienia(dane).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] })
+      setBladNick('')
       setZapisano(true)
       setTimeout(() => setZapisano(false), 2000)
+    },
+    onError: (err: any) => {
+      if (err.response?.status === 400 && err.response?.data?.detail?.includes('nick')) {
+        setBladNick('Ten nick jest już zajęty')
+      }
     },
   })
 
   function zapisz() {
+    setBladNick('')
     mutacja.mutate({
+      imie: imie || undefined,
+      nazwisko: nazwisko || undefined,
+      nick: nick || undefined,
       miasto: miasto || undefined,
       adres: adres || undefined,
       notify_push: notifyPush,
@@ -85,6 +102,39 @@ export default function Ustawienia() {
           <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
           <p className="text-sm text-slate-500">{user?.email}</p>
         </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Imię</label>
+            <input
+              className="input"
+              value={imie}
+              onChange={e => setImie(e.target.value)}
+              placeholder="Jan"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nazwisko</label>
+            <input
+              className="input"
+              value={nazwisko}
+              onChange={e => setNazwisko(e.target.value)}
+              placeholder="Kowalski"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Nick</label>
+          <input
+            className="input"
+            value={nick}
+            onChange={e => setNick(e.target.value)}
+            placeholder="np. janek_gda"
+          />
+          {bladNick && <p className="text-xs text-red-600 mt-1">{bladNick}</p>}
+          <p className="text-xs text-slate-400 mt-1">
+            Wyświetlany na mapie obok imienia i nazwiska.
+          </p>
+        </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Miasto</label>
           <input
@@ -93,9 +143,6 @@ export default function Ustawienia() {
             onChange={e => setMiasto(e.target.value)}
             placeholder="np. Gdańsk"
           />
-          <p className="text-xs text-slate-400 mt-1">
-            Wymagane do tablicy wymiany jedzenia
-          </p>
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Adres</label>

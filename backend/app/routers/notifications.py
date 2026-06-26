@@ -19,7 +19,10 @@ def lista_powiadomien(
 ):
     query = (
         select(Notification)
-        .where(Notification.user_id == current_user.id)
+        .where(
+            Notification.user_id == current_user.id,
+            Notification.type != "friend_request",
+        )
         .order_by(Notification.created_at.desc())
     )
     if tylko_nieprzeczytane:
@@ -67,6 +70,7 @@ def licznik_nieprzeczytanych(
             select(Notification).where(
                 Notification.user_id == current_user.id,
                 Notification.read == False,
+                Notification.type != "friend_request",
             )
         ).all()
     )
