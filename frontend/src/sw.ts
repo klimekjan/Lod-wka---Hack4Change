@@ -13,7 +13,7 @@ self.addEventListener('push', (event) => {
     url?: string
   } ?? {}
   ;(event as ExtendableEvent).waitUntil(
-    self.registration.showNotification(data.title ?? 'Lodówka', {
+    self.registration.showNotification(data.title ?? 'Eat Me App', {
       body: data.body ?? '',
       icon: '/icon-192.png',
       badge: '/icon-192.png',

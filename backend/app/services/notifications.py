@@ -123,18 +123,20 @@ def sprawdz_terminy(session: Session) -> int:
             [f"- {p.name}" for p in produkty_alertu]
         )
 
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
         if user.notify_push:
             subs = session.exec(
                 select(PushSubscription).where(PushSubscription.user_id == user.id)
             ).all()
             for sub in subs:
-                _wyslij_push(sub, {"title": "Lodówka", "body": body_push, "url": "/"})
+                _wyslij_push(sub, {"title": "Eat Me App", "body": body_push, "url": "/"})
 
         if user.notify_email:
             _wyslij_email(
                 do=user.email,
-                temat="Lodówka: produkty wymagają uwagi",
-                tresc=f"Cześć!\n\nNastępujące produkty wymagają uwagi:\n{body_email}\n\nOtwórz aplikację: http://localhost:5173",
+                temat="Eat Me App: produkty wymagają uwagi",
+                tresc=f"Cześć!\n\nNastępujące produkty wymagają uwagi:\n{body_email}\n\nOtwórz aplikację: {frontend_url}",
             )
 
     session.commit()

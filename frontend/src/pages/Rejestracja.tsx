@@ -33,7 +33,7 @@ export default function Rejestracja() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-zielony-700">Lodówka</h1>
+          <h1 className="text-2xl font-bold text-zielony-700">Eat Me App</h1>
           <p className="text-sm text-slate-500 mt-1">Utwórz nowe konto</p>
         </div>
         <form onSubmit={submit} className="karta space-y-4">
