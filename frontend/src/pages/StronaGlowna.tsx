@@ -37,7 +37,7 @@ export default function StronaGlowna() {
       }`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Logo size={44} />
+            <span className="font-bold text-white text-lg tracking-tight">Eat Me App</span>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/logowanie" className="btn-secondary text-sm py-1.5 px-4">
@@ -60,8 +60,14 @@ export default function StronaGlowna() {
         <div className="absolute inset-0 bg-gradient-to-b from-nocny-900/60 via-transparent to-nocny-800" />
 
         <div className="relative z-10 text-center px-6 max-w-3xl mx-auto pt-16">
-          <div className="animate-float mb-8 inline-block drop-shadow-2xl">
-            <Logo size={120} withText={false} />
+          <div className="animate-float mb-8 inline-block relative">
+            <img
+              src="/brush.png"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] pointer-events-none select-none"
+            />
+            <Logo size={120} withText={false} className="relative z-10" />
           </div>
           <h1
             className="text-5xl sm:text-7xl font-black text-white leading-tight mb-5 animate-fadeInUp"
