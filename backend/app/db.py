@@ -23,9 +23,12 @@ _MIGRACJE = {
         ("notify_email", "INTEGER DEFAULT 1"),
         ("notify_days_before", "INTEGER DEFAULT 3"),
         ("notify_hour", "INTEGER DEFAULT 8"),
+        ("email_verified", "INTEGER DEFAULT 0 NOT NULL"),
+        ("verification_token", "TEXT"),
     ],
     "share_listings": [("address", "TEXT"), ("lat", "FLOAT"), ("lon", "FLOAT")],
     "pantry_items": [("event_id", "INTEGER"), ("image_url", "TEXT")],
+    "consumption_logs": [("days_left_at_log", "INTEGER")],
 }
 
 

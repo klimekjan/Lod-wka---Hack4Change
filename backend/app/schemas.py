@@ -40,6 +40,7 @@ class UserResponse(BaseModel):
     notify_days_before: int
     notify_hour: int
     created_at: datetime
+    email_verified: bool = False
 
     class Config:
         from_attributes = True
@@ -140,9 +141,13 @@ class SugestiaProduktu(BaseModel):
 class DashboardStats(BaseModel):
     kg_uratowane: float
     kg_zmarnowane: float
+    kg_oddane: float
     zl_zaoszczedzone: float
     co2_unikniete: float
     streak_dni: int
+    wskaznik_uratowania: float
+    liczba_uratowan: int
+    kg_na_styk: float
     tygodniowe: List[dict]
 
 

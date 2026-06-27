@@ -62,7 +62,7 @@ export default function Pulpit() {
         <div className="grid grid-cols-3 gap-2">
           {[
             { value: stats.streak_dni, label: stats.streak_dni === 1 ? 'dzień' : 'dni', sub: 'bez marnowania', cls: 'text-limonka-400' },
-            { value: stats.kg_uratowane.toFixed(1), label: 'kg', sub: 'uratowane', cls: 'text-zielony-400' },
+            { value: `${stats.wskaznik_uratowania.toFixed(0)}%`, label: 'uratowania', sub: 'wskaźnik', cls: 'text-zielony-400' },
             { value: naWylocie.length, label: 'produktów', sub: 'na wylocie', cls: 'text-grafit-100' },
           ].map(({ value, label, sub, cls }) => (
             <div

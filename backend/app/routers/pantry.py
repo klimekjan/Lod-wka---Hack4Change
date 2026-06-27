@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,6 +15,7 @@ from ..schemas import (
 )
 from ..services.ml.features import SHELF_LIFE_DNI
 from ..services.ml.predict import przewiduj_ryzyko_batch
+from ..services.shelflife import domyslne_dni
 
 router = APIRouter(prefix="/api/spizarnia", tags=["spizarnia"])
 
@@ -23,6 +24,13 @@ def _dni_do_konca(expires_at: Optional[datetime]) -> Optional[int]:
     if not expires_at:
         return None
     return (expires_at - datetime.utcnow()).days
+
+
+def _oblicz_dni_przy_akcji(item: PantryItem) -> Optional[int]:
+    if item.expires_at:
+        return (item.expires_at - datetime.utcnow()).days
+    implikowany = item.added_at + timedelta(days=domyslne_dni(item.category))
+    return (implikowany - datetime.utcnow()).days
 
 
 def _to_response_bez_ryzyka(item: PantryItem) -> ProduktResponse:
@@ -155,17 +163,18 @@ def akcja_produktu(
     if dane.action not in ("eaten", "wasted", "shared"):
         raise HTTPException(status_code=400, detail="Dozwolone akcje: eaten, wasted, shared")
 
-    if dane.action in ("eaten", "wasted"):
-        log = ConsumptionLog(
-            user_id=current_user.id,
-            item_name=item.name,
-            category=item.category,
-            quantity=dane.quantity or item.quantity,
-            unit=item.unit,
-            action=dane.action,
-            weight_kg=dane.weight_kg,
-        )
-        session.add(log)
+    dni_przy_akcji = _oblicz_dni_przy_akcji(item)
+    log = ConsumptionLog(
+        user_id=current_user.id,
+        item_name=item.name,
+        category=item.category,
+        quantity=dane.quantity or item.quantity,
+        unit=item.unit,
+        action=dane.action,
+        weight_kg=dane.weight_kg,
+        days_left_at_log=dni_przy_akcji,
+    )
+    session.add(log)
 
     if dane.action == "shared":
         if not current_user.address:
