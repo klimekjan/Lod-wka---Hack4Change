@@ -109,6 +109,15 @@ class Friendship(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class RecipeCache(SQLModel, table=True):
+    __tablename__ = "recipe_cache"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", unique=True, index=True)
+    recipes_json: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class Notification(SQLModel, table=True):
     __tablename__ = "notifications"
 

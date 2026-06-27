@@ -172,6 +172,31 @@ export const spolecznosc = {
   usun: (id: number) => api.delete(`/spolecznosc/${id}`),
 }
 
+// Przepisy
+
+export interface Przepis {
+  tytul: string
+  opis: string
+  czas_min: number
+  porcje: number
+  trudnosc?: string
+  skladniki_spizarni: string[]
+  skladniki_dodatkowe: string[]
+  kroki: string[]
+  uratowane_produkty: number
+}
+
+export interface PrzepisyCache {
+  przepisy: Przepis[]
+  created_at: string | null
+  info?: string
+}
+
+export const przepisy = {
+  pobierz: () => api.get<PrzepisyCache>('/przepisy'),
+  generuj: () => api.post<PrzepisyCache>('/przepisy/generuj'),
+}
+
 // Znajomi
 
 export const znajomi = {
