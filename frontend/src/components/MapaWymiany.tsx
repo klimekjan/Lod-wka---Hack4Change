@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Ogloszenie } from '../lib/api'
+import { Ogloszenie, Wydarzenie } from '../lib/api'
 
 function tworzPinezke(kolor: string) {
   return L.divIcon({
@@ -21,6 +21,7 @@ function tworzPinezke(kolor: string) {
 
 const pinZielony = tworzPinezke('#16a34a')
 const pinBursztyn = tworzPinezke('#d97706')
+const pinFiolet = tworzPinezke('#9333ea')
 
 const SRODEK_POLSKI: [number, number] = [52.0, 19.0]
 
@@ -37,22 +38,50 @@ function etykietaWlasciciela(
   return null
 }
 
+function formatDataGodzina(iso: string): string {
+  return new Date(iso).toLocaleString('pl-PL', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 interface Props {
   ogloszenia: Ogloszenie[]
   userId?: number
   onZarezerwuj: (id: number) => void
+  wydarzenia?: Wydarzenie[]
+  onZapiszSie?: (id: number) => void
+  onDodajProdukty?: (id: number) => void
 }
 
-export default function MapaWymiany({ ogloszenia, userId, onZarezerwuj }: Props) {
+export default function MapaWymiany({
+  ogloszenia,
+  userId,
+  onZarezerwuj,
+  wydarzenia = [],
+  onZapiszSie,
+  onDodajProdukty,
+}: Props) {
   const zPinezka = useMemo(
     () => ogloszenia.filter(o => o.lat != null && o.lon != null),
     [ogloszenia],
   )
+  const wydarzeniaZPinezka = useMemo(
+    () => wydarzenia.filter(w => w.lat != null && w.lon != null),
+    [wydarzenia],
+  )
 
-  const srodek: [number, number] = zPinezka.length > 0
-    ? [zPinezka[0].lat!, zPinezka[0].lon!]
+  const wszystkiePunkty = [
+    ...zPinezka.map(o => [o.lat!, o.lon!] as [number, number]),
+    ...wydarzeniaZPinezka.map(w => [w.lat!, w.lon!] as [number, number]),
+  ]
+
+  const srodek: [number, number] = wszystkiePunkty.length > 0
+    ? wszystkiePunkty[0]
     : SRODEK_POLSKI
-  const zoom = zPinezka.length > 0 ? 12 : 6
+  const zoom = wszystkiePunkty.length > 0 ? 12 : 6
 
   return (
     <div className="rounded-xl overflow-hidden border border-grafit-600">
@@ -75,7 +104,7 @@ export default function MapaWymiany({ ogloszenia, userId, onZarezerwuj }: Props)
             o.wlasciciel_nick,
           )
           return (
-            <Marker key={o.id} position={[o.lat!, o.lon!]} icon={icon}>
+            <Marker key={`og-${o.id}`} position={[o.lat!, o.lon!]} icon={icon}>
               <Popup>
                 <div className="space-y-1 min-w-[140px]">
                   <p className="font-semibold">{o.item_name}</p>
@@ -103,6 +132,39 @@ export default function MapaWymiany({ ogloszenia, userId, onZarezerwuj }: Props)
             </Marker>
           )
         })}
+        {wydarzeniaZPinezka.map(w => (
+          <Marker key={`ev-${w.id}`} position={[w.lat!, w.lon!]} icon={pinFiolet}>
+            <Popup>
+              <div className="space-y-1 min-w-[160px]">
+                <p className="font-semibold" style={{ color: '#9333ea' }}>📅 {w.name}</p>
+                <p className="text-xs text-gray-500">{formatDataGodzina(w.event_at)}</p>
+                {w.address && <p className="text-xs text-gray-400">{w.address}</p>}
+                <p className="text-xs text-gray-500">Uczestników: {w.liczba_uczestnikow}</p>
+                {w.czy_moje && (
+                  <p className="text-xs font-medium" style={{ color: '#9333ea' }}>Twoje wydarzenie</p>
+                )}
+                {!w.czy_moje && !w.czy_uczestnicze && onZapiszSie && (
+                  <button
+                    className="btn-primary text-sm py-1 px-3 mt-1 w-full"
+                    style={{ backgroundColor: '#9333ea' }}
+                    onClick={() => onZapiszSie(w.id)}
+                  >
+                    Zapisz się
+                  </button>
+                )}
+                {w.czy_uczestnicze && !w.czy_moje && onDodajProdukty && (
+                  <button
+                    className="btn-primary text-sm py-1 px-3 mt-1 w-full"
+                    style={{ backgroundColor: '#9333ea' }}
+                    onClick={() => onDodajProdukty(w.id)}
+                  >
+                    Dodaj produkty
+                  </button>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
     </div>
   )

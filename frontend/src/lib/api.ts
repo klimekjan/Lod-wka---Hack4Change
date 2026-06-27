@@ -37,6 +37,8 @@ export interface Produkt {
   status: string
   days_left?: number
   risk_score?: number
+  event_id?: number
+  event_name?: string
 }
 
 export interface User {
@@ -143,6 +145,7 @@ export const spizarnia = {
     api.post<Produkt>(`/spizarnia/${id}/akcja`, { action, quantity, weight_kg }),
   usun: (id: number) => api.delete(`/spizarnia/${id}`),
   skanuj: (barcode: string) => api.get<{ found: boolean; name?: string; category?: string; image_url?: string; default_shelf_days?: number }>(`/produkty/barcode/${barcode}`),
+  szukaj: (q: string) => api.get<{ found: boolean; name?: string; category?: string; image_url?: string; default_shelf_days?: number }>('/produkty/szukaj', { params: { q } }),
 }
 
 // Powiadomienia
@@ -195,6 +198,59 @@ export interface PrzepisyCache {
 export const przepisy = {
   pobierz: () => api.get<PrzepisyCache>('/przepisy'),
   generuj: () => api.post<PrzepisyCache>('/przepisy/generuj'),
+}
+
+// Wydarzenia
+
+export interface Wydarzenie {
+  id: number
+  organizer_id: number
+  name: string
+  description?: string
+  address: string
+  city?: string
+  lat?: number
+  lon?: number
+  event_at: string
+  status: string
+  created_at: string
+  organizator_imie?: string
+  organizator_nazwisko?: string
+  organizator_nick?: string
+  organizator_znajomy?: boolean
+  liczba_uczestnikow: number
+  czy_uczestnicze: boolean
+  czy_moje: boolean
+}
+
+export interface ProduktKrotki {
+  item_name: string
+  quantity: number
+  unit: string
+}
+
+export interface Uczestnik {
+  user_id: number
+  imie?: string
+  nazwisko?: string
+  nick?: string
+  produkty: ProduktKrotki[]
+}
+
+export interface WydarzenieSzczegoly extends Wydarzenie {
+  uczestnicy: Uczestnik[]
+}
+
+export const wydarzenia = {
+  lista: () => api.get<Wydarzenie[]>('/wydarzenia'),
+  szczegoly: (id: number) => api.get<WydarzenieSzczegoly>(`/wydarzenia/${id}`),
+  dodaj: (d: { name: string; description?: string; address: string; event_at: string }) =>
+    api.post<Wydarzenie>('/wydarzenia', d),
+  dolacz: (id: number) => api.post<Wydarzenie>(`/wydarzenia/${id}/dolacz`),
+  wypisz: (id: number) => api.delete(`/wydarzenia/${id}/dolacz`),
+  przekazProdukty: (id: number, pantry_item_ids: number[]) =>
+    api.put<Wydarzenie>(`/wydarzenia/${id}/moje-produkty`, { pantry_item_ids }),
+  usun: (id: number) => api.delete(`/wydarzenia/${id}`),
 }
 
 // Znajomi

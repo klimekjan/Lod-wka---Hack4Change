@@ -91,6 +91,8 @@ class ProduktResponse(BaseModel):
     status: str
     days_left: Optional[int] = None
     risk_score: Optional[float] = None
+    event_id: Optional[int] = None
+    event_name: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -169,6 +171,61 @@ class OgloszenieResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# --- Wydarzenia ---
+
+class DodajWydarzenieRequest(BaseModel):
+    name: str
+    description: Optional[str] = None
+    address: str
+    event_at: datetime
+
+
+class WydarzenieResponse(BaseModel):
+    id: int
+    organizer_id: int
+    name: str
+    description: Optional[str] = None
+    address: str
+    city: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    event_at: datetime
+    status: str
+    created_at: datetime
+    organizator_imie: Optional[str] = None
+    organizator_nazwisko: Optional[str] = None
+    organizator_nick: Optional[str] = None
+    organizator_znajomy: bool = False
+    liczba_uczestnikow: int = 0
+    czy_uczestnicze: bool = False
+    czy_moje: bool = False
+
+    class Config:
+        from_attributes = True
+
+
+class ProduktKrotki(BaseModel):
+    item_name: str
+    quantity: float
+    unit: str
+
+
+class UczestnikResponse(BaseModel):
+    user_id: int
+    imie: Optional[str] = None
+    nazwisko: Optional[str] = None
+    nick: Optional[str] = None
+    produkty: List[ProduktKrotki] = []
+
+
+class WydarzenieSzczegolyResponse(WydarzenieResponse):
+    uczestnicy: List[UczestnikResponse] = []
+
+
+class PrzekazProduktyRequest(BaseModel):
+    pantry_item_ids: List[int]
 
 
 # --- Znajomi ---
