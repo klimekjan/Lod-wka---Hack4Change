@@ -4,43 +4,143 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    @apply bg-grafit-850 text-grafit-100 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
 @layer components {
+  /* --- Landing page buttons (zielony, unchanged) --- */
   .btn-primary {
-    @apply bg-zielony-600 text-white px-4 py-2 rounded-lg font-medium
-           hover:bg-zielony-700 active:bg-zielony-800 transition-colors
+    @apply bg-zielony-500 text-white px-5 py-2.5 rounded-lg font-medium
+           hover:bg-zielony-400 active:bg-zielony-600 transition-colors
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-secondary {
-    @apply bg-white text-slate-700 px-4 py-2 rounded-lg font-medium border border-slate-200
-           hover:bg-slate-50 active:bg-slate-100 transition-colors;
+    @apply bg-nocny-700 text-slate-200 px-5 py-2.5 rounded-lg font-medium border border-nocny-600
+           hover:bg-nocny-600 active:bg-nocny-500 transition-colors;
+  }
+
+  /* --- App buttons (limonka pill) --- */
+  .btn {
+    @apply bg-limonka-400 text-grafit-900 px-5 py-2 rounded-full font-semibold text-sm
+           hover:bg-limonka-300 active:bg-limonka-500 transition-colors
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply border border-grafit-600 text-grafit-100 px-5 py-2 rounded-full font-medium text-sm
+           hover:bg-grafit-700 active:bg-grafit-600 transition-colors;
   }
   .btn-danger {
-    @apply bg-red-600 text-white px-4 py-2 rounded-lg font-medium
-           hover:bg-red-700 transition-colors;
+    @apply bg-red-900/60 text-red-300 border border-red-800/60 px-4 py-2 rounded-full font-medium text-sm
+           hover:bg-red-800/60 transition-colors;
+  }
+
+  /* --- App cards & inputs (grafit) --- */
+  .karta {
+    @apply rounded-xl p-4;
+    background: radial-gradient(ellipse at bottom right, rgba(255,255,255,0.06) 0%, transparent 60%), #26271f;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
   }
   .input {
-    @apply w-full border border-slate-200 rounded-lg px-3 py-2 text-sm
-           focus:outline-none focus:ring-2 focus:ring-zielony-500 focus:border-transparent
-           placeholder:text-slate-400;
+    @apply w-full bg-grafit-900 border border-grafit-600 rounded-lg px-3 py-2 text-sm
+           text-grafit-100 outline-none focus:border-grafit-500
+           placeholder:text-grafit-500;
   }
-  .karta {
-    @apply bg-white rounded-xl border border-slate-100 shadow-sm p-4;
+  select.input {
+    @apply appearance-none;
   }
+
+  /* --- Badges --- */
   .badge-swiezy {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-           bg-zielony-100 text-zielony-800;
+           bg-zielony-500/20 text-zielony-400;
   }
   .badge-wylot {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-           bg-bursztyn-100 text-bursztyn-600;
+           bg-bursztyn-500/20 text-bursztyn-400;
   }
   .badge-przeterminowany {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-           bg-red-100 text-red-700;
+           bg-red-500/20 text-red-400;
   }
+
+  /* --- Typography helper --- */
+  .font-display {
+    font-family: 'Fraunces', Georgia, serif;
+  }
+  .app-shell {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  .animate-fadeInUp {
+    animation: fadeInUp 0.6s ease-out both;
+  }
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── LIGHT MODE ─────────────────────────────────────────────────── */
+html.light body {
+  background-color: #f2f3ee !important;
+  color: #1f201a !important;
+}
+html.light nav {
+  background-color: #ffffff !important;
+  border-color: #dddecf !important;
+}
+html.light .karta {
+  background: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+html.light .input {
+  background-color: #eeeee8 !important;
+  border-color: #c8c9bb !important;
+  color: #1f201a !important;
+}
+html.light .input::placeholder { color: #9a9b8c !important; }
+html.light .btn-ghost {
+  border-color: #c8c9bb !important;
+  color: #1f201a !important;
+}
+html.light .btn-ghost:hover { background-color: #e5e6df !important; }
+
+/* text */
+html.light .text-grafit-100 { color: #1f201a !important; }
+html.light .text-grafit-300 { color: #3d3e35 !important; }
+html.light .text-grafit-400 { color: #6b6c5f !important; }
+html.light .text-grafit-500 { color: #9a9b8c !important; }
+
+/* backgrounds */
+html.light .bg-grafit-700,
+html.light .bg-grafit-800,
+html.light .bg-grafit-850,
+html.light .bg-grafit-900 { background-color: #f2f3ee !important; }
+html.light .bg-nocny-900  { background-color: #e5e6df !important; }
+
+/* borders */
+html.light .border-grafit-600,
+html.light .border-grafit-700 { border-color: #c8c9bb !important; }
+html.light .divide-nocny-700  > * + * { border-color: #c8c9bb !important; }
+
+/* Autofill override — prevents browser yellow background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #16170f inset !important;
+  -webkit-text-fill-color: #f1ede2 !important;
+  caret-color: #f1ede2;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
 }

@@ -1,0 +1,43 @@
+import { createContext, useContext, useState, useEffect, createElement, ReactNode } from 'react'
+
+interface ThemeCtx { light: boolean; toggle: () => void }
+
+const ThemeContext = createContext<ThemeCtx>({ light: false, toggle: () => {} })
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [light, setLight] = useState(() => localStorage.getItem('theme') === 'light')
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', light)
+    localStorage.setItem('theme', light ? 'light' : 'dark')
+  }, [light])
+
+  return createElement(
+    ThemeContext.Provider,
+    { value: { light, toggle: () => setLight(v => !v) } },
+    children,
+  )
+}
+
+export function useTheme() {
+  return useContext(ThemeContext)
+}
+
+/* helpers — call inside component */
+export function cardStyle(light: boolean, accentRgb = '194,240,79', corner = 'top left'): React.CSSProperties {
+  return light
+    ? { background: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }
+    : {
+        background: `radial-gradient(ellipse at ${corner}, rgba(${accentRgb},0.11) 0%, transparent 65%), #1f201a`,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+      }
+}
+
+export function infoCardStyle(light: boolean): React.CSSProperties {
+  return light
+    ? { background: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }
+    : {
+        background: 'radial-gradient(ellipse at bottom right, rgba(255,255,255,0.06) 0%, transparent 60%), #26271f',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+      }
+}

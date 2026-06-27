@@ -9,20 +9,9 @@ function etykietaStatusu(status: ProfilPubliczny['status_znajomosci']) {
   return null
 }
 
-function KartaProfilu({
-  profil,
-  onZapros,
-  onAkceptuj,
-  onOdrzuc,
-  onUsun,
-  zaproszenieId,
-}: {
-  profil: ProfilPubliczny
-  onZapros?: () => void
-  onAkceptuj?: () => void
-  onOdrzuc?: () => void
-  onUsun?: () => void
-  zaproszenieId?: number
+function KartaProfilu({ profil, onZapros, onAkceptuj, onOdrzuc, onUsun, zaproszenieId }: {
+  profil: ProfilPubliczny; onZapros?: () => void; onAkceptuj?: () => void
+  onOdrzuc?: () => void; onUsun?: () => void; zaproszenieId?: number
 }) {
   const pelneImie = [profil.imie, profil.nazwisko].filter(Boolean).join(' ')
   const displayName = pelneImie || profil.nick || `Użytkownik #${profil.id}`
@@ -32,38 +21,30 @@ function KartaProfilu({
     <div className="karta flex items-center justify-between gap-3">
       <div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-slate-900">{displayName}</span>
+          <span className="font-medium text-grafit-100">{displayName}</span>
           {pelneImie && profil.nick && (
-            <span className="text-sm text-slate-500">@{profil.nick}</span>
+            <span className="text-sm text-grafit-400">@{profil.nick}</span>
           )}
         </div>
         {etykieta && profil.status_znajomosci !== 'oczekuje' && (
-          <span className="text-xs text-slate-400">{etykieta}</span>
+          <span className="text-xs text-grafit-400">{etykieta}</span>
         )}
       </div>
       <div className="flex gap-2 shrink-0">
         {profil.status_znajomosci === 'brak' && onZapros && (
-          <button className="btn-primary text-sm py-1 px-3" onClick={onZapros}>
-            Dodaj
-          </button>
+          <button className="btn text-sm py-1 px-3" onClick={onZapros}>Dodaj</button>
         )}
         {profil.status_znajomosci === 'wyslane' && (
-          <span className="text-xs text-slate-400 py-1">Wysłano</span>
+          <span className="text-xs text-grafit-400 py-1">Wysłano</span>
         )}
         {profil.status_znajomosci === 'oczekuje' && onAkceptuj && onOdrzuc && (
           <>
-            <button className="btn-primary text-sm py-1 px-3" onClick={onAkceptuj}>
-              Akceptuj
-            </button>
-            <button className="btn-secondary text-sm py-1 px-2" onClick={onOdrzuc}>
-              Odrzuć
-            </button>
+            <button className="btn text-sm py-1 px-3" onClick={onAkceptuj}>Akceptuj</button>
+            <button className="btn-ghost text-sm py-1 px-2" onClick={onOdrzuc}>Odrzuć</button>
           </>
         )}
         {profil.status_znajomosci === 'znajomy' && onUsun && (
-          <button className="btn-secondary text-sm py-1 px-2 text-slate-400" onClick={onUsun}>
-            Usuń
-          </button>
+          <button className="btn-ghost text-sm py-1 px-2 text-grafit-400" onClick={onUsun}>Usuń</button>
         )}
       </div>
     </div>
@@ -74,16 +55,8 @@ export default function Znajomi() {
   const queryClient = useQueryClient()
   const [query, setQuery] = useState('')
 
-  const { data: listaZnajomych = [] } = useQuery({
-    queryKey: ['znajomi'],
-    queryFn: () => znajomiApi.lista().then(r => r.data),
-  })
-
-  const { data: zaproszenia = [] } = useQuery({
-    queryKey: ['zaproszenia'],
-    queryFn: () => znajomiApi.zaproszenia().then(r => r.data),
-  })
-
+  const { data: listaZnajomych = [] } = useQuery({ queryKey: ['znajomi'], queryFn: () => znajomiApi.lista().then(r => r.data) })
+  const { data: zaproszenia = [] } = useQuery({ queryKey: ['zaproszenia'], queryFn: () => znajomiApi.zaproszenia().then(r => r.data) })
   const { data: wynikSzukania = [], isFetching: szukanie } = useQuery({
     queryKey: ['znajomi-szukaj', query],
     queryFn: () => query.length >= 2 ? znajomiApi.szukaj(query).then(r => r.data) : Promise.resolve([]),
@@ -97,33 +70,17 @@ export default function Znajomi() {
     queryClient.invalidateQueries({ queryKey: ['licznik-zaproszen'] })
   }
 
-  const mutZapros = useMutation({
-    mutationFn: (userId: number) => znajomiApi.zapros(userId),
-    onSuccess: invaliduj,
-  })
-
-  const mutAkceptuj = useMutation({
-    mutationFn: (id: number) => znajomiApi.akceptuj(id),
-    onSuccess: invaliduj,
-  })
-
-  const mutOdrzuc = useMutation({
-    mutationFn: (id: number) => znajomiApi.odrzuc(id),
-    onSuccess: invaliduj,
-  })
-
-  const mutUsun = useMutation({
-    mutationFn: (userId: number) => znajomiApi.usun(userId),
-    onSuccess: invaliduj,
-  })
+  const mutZapros = useMutation({ mutationFn: (userId: number) => znajomiApi.zapros(userId), onSuccess: invaliduj })
+  const mutAkceptuj = useMutation({ mutationFn: (id: number) => znajomiApi.akceptuj(id), onSuccess: invaliduj })
+  const mutOdrzuc = useMutation({ mutationFn: (id: number) => znajomiApi.odrzuc(id), onSuccess: invaliduj })
+  const mutUsun = useMutation({ mutationFn: (userId: number) => znajomiApi.usun(userId), onSuccess: invaliduj })
 
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-bold text-slate-900">Znajomi</h1>
+      <h1 className="font-display text-2xl font-semibold text-grafit-100">Znajomi</h1>
 
-      {/* Wyszukiwarka */}
       <div className="karta space-y-3">
-        <h2 className="font-semibold text-slate-800">Znajdź użytkownika</h2>
+        <h2 className="font-semibold text-grafit-100">Znajdź użytkownika</h2>
         <input
           className="input"
           placeholder="Imię, nazwisko lub nick (min. 2 znaki)..."
@@ -132,25 +89,20 @@ export default function Znajomi() {
         />
         {query.length >= 2 && (
           <div className="space-y-2">
-            {szukanie && <p className="text-sm text-slate-400">Szukam...</p>}
+            {szukanie && <p className="text-sm text-grafit-400">Szukam...</p>}
             {!szukanie && wynikSzukania.length === 0 && (
-              <p className="text-sm text-slate-400">Brak wyników dla „{query}"</p>
+              <p className="text-sm text-grafit-400">Brak wyników dla „{query}"</p>
             )}
             {wynikSzukania.map(profil => (
-              <KartaProfilu
-                key={profil.id}
-                profil={profil}
-                onZapros={() => mutZapros.mutate(profil.id)}
-              />
+              <KartaProfilu key={profil.id} profil={profil} onZapros={() => mutZapros.mutate(profil.id)} />
             ))}
           </div>
         )}
       </div>
 
-      {/* Zaproszenia */}
       {zaproszenia.length > 0 && (
         <div className="space-y-2">
-          <h2 className="text-xs font-semibold text-bursztyn-600 uppercase tracking-widest">
+          <h2 className="text-xs font-semibold text-bursztyn-400 uppercase tracking-widest">
             Zaproszenia ({zaproszenia.length})
           </h2>
           {zaproszenia.map((z: Zaproszenie) =>
@@ -167,25 +119,18 @@ export default function Znajomi() {
         </div>
       )}
 
-      {/* Lista znajomych */}
       <div className="space-y-2">
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+        <h2 className="text-xs font-semibold text-grafit-400 uppercase tracking-widest">
           Znajomi ({listaZnajomych.length})
         </h2>
         {listaZnajomych.length === 0 && (
           <div className="karta text-center py-10">
-            <p className="font-medium text-slate-700">Nie masz jeszcze znajomych</p>
-            <p className="text-sm text-slate-400 mt-1">
-              Wyszukaj użytkownika powyżej i wyślij zaproszenie
-            </p>
+            <p className="font-medium text-grafit-100">Nie masz jeszcze znajomych</p>
+            <p className="text-sm text-grafit-400 mt-1">Wyszukaj użytkownika powyżej i wyślij zaproszenie</p>
           </div>
         )}
         {listaZnajomych.map(profil => (
-          <KartaProfilu
-            key={profil.id}
-            profil={profil}
-            onUsun={() => mutUsun.mutate(profil.id)}
-          />
+          <KartaProfilu key={profil.id} profil={profil} onUsun={() => mutUsun.mutate(profil.id)} />
         ))}
       </div>
     </div>
