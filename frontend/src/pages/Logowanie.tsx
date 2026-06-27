@@ -17,6 +17,11 @@ export default function Logowanie() {
     try {
       const res = await auth.login(email, haslo)
       localStorage.setItem('token', res.data.access_token)
+      const vp = document.querySelector<HTMLMetaElement>('meta[name=viewport]')
+      if (vp) {
+        vp.content = 'width=device-width, initial-scale=1, maximum-scale=1'
+        setTimeout(() => { vp.content = 'width=device-width, initial-scale=1' }, 300)
+      }
       navigate('/')
     } catch (err: any) {
       setBlad(err.response?.data?.detail || 'Błąd logowania')

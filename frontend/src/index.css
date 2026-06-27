@@ -46,6 +46,7 @@
     @apply w-full bg-grafit-900 border border-grafit-600 rounded-lg px-3 py-2 text-sm
            text-grafit-100 outline-none focus:border-grafit-500
            placeholder:text-grafit-500;
+    font-size: 16px; /* zapobiega auto-zoomowi iOS Safari */
   }
   select.input {
     @apply appearance-none;

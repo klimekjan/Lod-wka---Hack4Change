@@ -106,6 +106,18 @@ class AkcjaProduktRequest(BaseModel):
 
 # --- Powiadomienia ---
 
+class NotificationItem(BaseModel):
+    id: int
+    name: str
+    category: str
+    quantity: float
+    unit: str
+    image_url: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    days_left: Optional[int] = None
+    status: str
+
+
 class NotificationResponse(BaseModel):
     id: int
     type: str
@@ -113,6 +125,7 @@ class NotificationResponse(BaseModel):
     item_id: Optional[int]
     created_at: datetime
     read: bool
+    produkt: Optional[NotificationItem] = None
 
     class Config:
         from_attributes = True
