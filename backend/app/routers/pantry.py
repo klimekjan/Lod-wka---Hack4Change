@@ -202,6 +202,22 @@ def akcja_produktu(
     return _to_response(item)
 
 
+@router.post("/{item_id}/przedluz", response_model=ProduktResponse)
+def przedluz_termin(
+    item_id: int,
+    dni: int = 3,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    item = _get_or_404(item_id, current_user.id, session)
+    base = item.expires_at or datetime.utcnow()
+    item.expires_at = base + timedelta(days=dni)
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    return _to_response(item)
+
+
 @router.delete("/{item_id}", status_code=204)
 def usun_produkt(
     item_id: int,

@@ -79,6 +79,18 @@ export interface Zaproszenie {
   profil?: ProfilPubliczny
 }
 
+export interface NotificationItem {
+  id: number
+  name: string
+  category: string
+  quantity: number
+  unit: string
+  image_url?: string
+  expires_at?: string
+  days_left?: number
+  status: string
+}
+
 export interface Powiadomienie {
   id: number
   type: string
@@ -86,6 +98,7 @@ export interface Powiadomienie {
   item_id?: number
   created_at: string
   read: boolean
+  produkt?: NotificationItem
 }
 
 export interface DashboardStats {
@@ -160,6 +173,8 @@ export const spizarnia = {
   aktualizuj: (id: number, dane: Partial<Produkt>) => api.patch<Produkt>(`/spizarnia/${id}`, dane),
   akcja: (id: number, action: string, quantity?: number, weight_kg?: number) =>
     api.post<Produkt>(`/spizarnia/${id}/akcja`, { action, quantity, weight_kg }),
+  przedluz: (id: number, dni = 3) =>
+    api.post<Produkt>(`/spizarnia/${id}/przedluz`, null, { params: { dni } }),
   usun: (id: number) => api.delete(`/spizarnia/${id}`),
   skanuj: (barcode: string) => api.get<{ found: boolean; name?: string; category?: string; image_url?: string; default_shelf_days?: number }>(`/produkty/barcode/${barcode}`),
   szukaj: (q: string) => api.get<{ found: boolean; name?: string; category?: string; image_url?: string; default_shelf_days?: number }>('/produkty/szukaj', { params: { q } }),
@@ -174,6 +189,7 @@ export const powiadomienia = {
   licznik: () => api.get<{ count: number }>('/powiadomienia/licznik'),
   przeczytaj: (id: number) => api.post(`/powiadomienia/${id}/przeczytane`),
   przeczytajWszystkie: () => api.post('/powiadomienia/przeczytaj-wszystkie'),
+  test: () => api.post<{ id: number }>('/powiadomienia/test'),
 }
 
 // Dashboard
