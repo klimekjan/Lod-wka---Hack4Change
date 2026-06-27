@@ -1,7 +1,8 @@
 from sqlalchemy import text
 from sqlmodel import SQLModel, create_engine, Session
-
-DATABASE_URL = "sqlite:///./lodowka.db"
+import os
+os.makedirs("data", exist_ok=True)
+DATABASE_URL = "sqlite:///./data/lodowka.db"
 
 engine = create_engine(
     DATABASE_URL,
