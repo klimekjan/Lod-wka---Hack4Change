@@ -2,8 +2,23 @@ import { useState, FormEvent, useCallback, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
-import { spizarnia, wydarzenia as wydarzeniaApi, Produkt } from '../lib/api'
+import { spizarnia, wydarzenia as wydarzeniaApi, Produkt, SugestiaProduktu } from '../lib/api'
 import BarcodeScanner from '../components/BarcodeScanner'
+import ProductAutocomplete from '../components/ProductAutocomplete'
+import { IconProdukt } from '../components/ikony'
+
+const KOLOR_KATEGORII: Record<string, string> = {
+  'nabiał': '#1e3a5f',
+  'mięso surowe': '#4a1a1a',
+  'ryby': '#0f3340',
+  'warzywa twarde': '#14321e',
+  'warzywa liściaste': '#14321e',
+  'owoce': '#3d2000',
+  'pieczywo': '#3d2a00',
+  'jajka': '#3d3000',
+  'napoje': '#0f2a3d',
+  'przetwory': '#2e1a40',
+}
 
 const KATEGORIE = [
   'nabiał', 'mięso surowe', 'ryby', 'warzywa liściaste',
@@ -64,7 +79,12 @@ function KafelekProduktu({
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
       ) : (
-        <div className="w-full h-full bg-grafit-700" />
+        <div
+          className="w-full h-full flex items-center justify-center"
+          style={{ background: KOLOR_KATEGORII[produkt.category] ?? '#26271f' }}
+        >
+          <IconProdukt className="w-10 h-10 opacity-30" />
+        </div>
       )}
 
       {produkt.expires_at && (
@@ -272,6 +292,19 @@ export default function Spizarnia() {
     setForm(f => ({ ...f, [key]: val }))
   }
 
+  function selectSugestia(s: SugestiaProduktu) {
+    const expiresAt = s.default_shelf_days
+      ? new Date(Date.now() + s.default_shelf_days * 86400_000).toISOString().slice(0, 10)
+      : form.expiresAt
+    setForm(f => ({
+      ...f,
+      name: s.name,
+      category: s.category || f.category,
+      imageUrl: s.image_url || f.imageUrl,
+      expiresAt,
+    }))
+  }
+
   function toggleZaznaczenie(id: number) {
     setZaznaczone(prev => {
       const next = new Set(prev)
@@ -388,11 +421,10 @@ export default function Spizarnia() {
             )}
             <div className="flex-1">
               <label className="block text-sm font-medium text-grafit-300 mb-1">Nazwa</label>
-              <input
-                className="input"
+              <ProductAutocomplete
                 value={form.name}
-                onChange={e => setField('name', e.target.value)}
-                required
+                onChange={val => setField('name', val)}
+                onSelect={selectSugestia}
                 placeholder="np. Mleko 3,2%"
                 autoFocus
               />

@@ -139,6 +139,15 @@ export const auth = {
   ustawienia: (dane: Record<string, unknown>) => api.patch<User>('/auth/ustawienia', dane),
 }
 
+// Open Food Facts
+
+export interface SugestiaProduktu {
+  name: string
+  category: string
+  image_url?: string
+  default_shelf_days?: number
+}
+
 // Spiżarnia
 
 export const spizarnia = {

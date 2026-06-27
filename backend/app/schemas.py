@@ -128,6 +128,13 @@ class BarcodeLookupResponse(BaseModel):
     default_shelf_days: Optional[int] = None
 
 
+class SugestiaProduktu(BaseModel):
+    name: str
+    category: str
+    image_url: Optional[str] = None
+    default_shelf_days: Optional[int] = None
+
+
 # --- Dashboard ---
 
 class DashboardStats(BaseModel):

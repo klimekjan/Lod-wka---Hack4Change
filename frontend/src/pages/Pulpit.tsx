@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { auth, dashboard, spizarnia } from '../lib/api'
 import { useTheme, cardStyle, infoCardStyle } from '../lib/theme'
 import {
-  IconSpizarnia, IconAI, IconTracker, IconMapa, IconZnajomi, IconUstawienia,
+  IconSpizarnia, IconAI, IconTracker, IconMapa, IconZnajomi, IconUstawienia, IconProdukt,
 } from '../components/ikony'
 
 const AKCJE = [
@@ -118,8 +118,8 @@ export default function Pulpit() {
                       className="w-9 h-9 rounded-lg object-cover shrink-0 bg-grafit-700"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-lg shrink-0 bg-grafit-600 flex items-center justify-center text-base">
-                      🥫
+                    <div className="w-9 h-9 rounded-lg shrink-0 bg-grafit-600 flex items-center justify-center text-grafit-400">
+                      <IconProdukt className="w-5 h-5" />
                     </div>
                   )}
                   <div className="min-w-0">

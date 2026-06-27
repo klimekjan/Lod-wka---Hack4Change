@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { spolecznosc, wydarzenia as wydarzeniaApi, auth, spizarnia, Ogloszenie, Wydarzenie, WydarzenieSzczegoly } from '../lib/api'
 import MapaWymiany from '../components/MapaWymiany'
+import { IconProdukt } from '../components/ikony'
 
 const JEDNOSTKI = ['szt.', 'kg', 'g', 'l', 'ml', 'opak.']
 
@@ -442,7 +443,7 @@ export default function Spolecznosc() {
                     {p.image_url ? (
                       <img src={p.image_url} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 bg-grafit-700" />
                     ) : (
-                      <div className="w-8 h-8 rounded-lg shrink-0 bg-grafit-600 flex items-center justify-center text-sm">🥫</div>
+                      <div className="w-8 h-8 rounded-lg shrink-0 bg-grafit-600 flex items-center justify-center text-grafit-400"><IconProdukt className="w-4 h-4" /></div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-grafit-100 truncate">{p.name}</p>
