@@ -208,28 +208,30 @@ export default function Spolecznosc() {
             {filtrMiasto && <button className="btn-ghost text-sm" onClick={() => setFiltrMiasto('')}>Wyczyść</button>}
           </div>
 
-          <div className="inline-flex rounded-full border border-grafit-600 p-0.5 bg-grafit-800">
-            {(['lista', 'mapa'] as const).map(w => (
-              <button
-                key={w}
-                onClick={() => setWidok(w)}
-                className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
-                  widok === w ? 'bg-grafit-700 text-limonka-400' : 'text-grafit-400 hover:text-grafit-100'
-                }`}
-              >
-                {w === 'lista' ? 'Lista' : 'Mapa'}
+          <div className="flex items-center gap-4">
+            <div className="inline-flex rounded-full border border-grafit-600 p-0.5 bg-grafit-800">
+              {(['lista', 'mapa'] as const).map(w => (
+                <button
+                  key={w}
+                  onClick={() => setWidok(w)}
+                  className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
+                    widok === w ? 'bg-grafit-700 text-limonka-400' : 'text-grafit-400 hover:text-grafit-100'
+                  }`}
+                >
+                  {w === 'lista' ? 'Lista' : 'Mapa'}
+                </button>
+              ))}
+            </div>
+
+            {!filtrMiasto && user?.miasto && (
+              <button className="text-sm text-limonka-400 hover:underline" onClick={() => setFiltrMiasto(user.miasto!)}>
+                Pokaż tylko {user.miasto}
               </button>
-            ))}
+            )}
           </div>
 
           {widok === 'mapa' && (
             <MapaWymiany ogloszenia={ogłoszenia} userId={user?.id} onZarezerwuj={(id) => mutacjaRezerwuj.mutate(id)} />
-          )}
-
-          {!filtrMiasto && user?.miasto && (
-            <button className="text-sm text-limonka-400 hover:underline" onClick={() => setFiltrMiasto(user.miasto!)}>
-              Pokaż tylko {user.miasto}
-            </button>
           )}
 
           {widok === 'lista' && isLoading && <p className="text-sm text-grafit-400 text-center py-8">Ładowanie...</p>}
