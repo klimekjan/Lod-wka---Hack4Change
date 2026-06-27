@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from anthropic import AsyncAnthropic
 
@@ -39,8 +39,13 @@ Odpowiedź TYLKO w JSON, bez żadnego tekstu przed ani po:
 
 
 async def generuj_przepisy(produkty: list[PantryItem]) -> list[dict]:
-    teraz = datetime.utcnow()
-    priorytety = [p for p in produkty if p.expires_at and (p.expires_at - teraz).days <= 3]
+    teraz = datetime.now(timezone.utc)
+    priorytety = [
+        p for p in produkty
+        if p.expires_at and (
+            (p.expires_at if p.expires_at.tzinfo else p.expires_at.replace(tzinfo=timezone.utc)) - teraz
+        ).days <= 3
+    ]
     pozostale = [p for p in produkty if p not in priorytety]
 
     def fmt(items: list) -> str:

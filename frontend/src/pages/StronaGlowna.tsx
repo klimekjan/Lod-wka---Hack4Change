@@ -228,7 +228,7 @@ export default function StronaGlowna() {
               <div className="absolute bottom-0 p-5">
                 <p className="text-white font-semibold text-lg">Mapa wymiany</p>
                 <p className="text-slate-300 text-sm mt-0.5">
-                  Oddaj sąsiadom lub odbierz od nich -- lokalna sieć dzielenia się produktami.
+                  Oddaj sąsiadom lub odbierz od nich - lokalna sieć dzielenia się produktami.
                 </p>
               </div>
             </div>

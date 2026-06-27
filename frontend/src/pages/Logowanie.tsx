@@ -26,7 +26,7 @@ export default function Logowanie() {
   }
 
   return (
-    <div className="min-h-screen app-shell flex items-center justify-center px-4 bg-cover bg-center" style={{ backgroundImage: "url('/bg-login.jpg')" }}>
+    <div className="min-h-screen bg-grafit-850 app-shell flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
