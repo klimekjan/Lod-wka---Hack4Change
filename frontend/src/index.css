@@ -2,6 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes slideUpOut {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideInRow {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInRowUp {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up      { animation: slideUp      0.28s cubic-bezier(0.32, 0.72, 0, 1) both; }
+.animate-slide-up-out  { animation: slideUpOut   0.22s cubic-bezier(0.4, 0, 1, 1)     both; }
+.animate-slide-down     { animation: slideDown    0.22s cubic-bezier(0.16, 1, 0.3, 1)  both; }
+.animate-slide-down-out { animation: slideDown    0.18s cubic-bezier(0.4, 0, 1, 1) both reverse; }
+.animate-fade-in       { animation: fadeIn       0.22s ease-out both; }
+.animate-slide-row     { animation: slideInRow   0.24s ease-out both; }
+.animate-slide-row-up  { animation: slideInRowUp 0.20s ease-out both; }
+
+/* Płynna zmiana motywu — aktywne tylko przez ~350ms podczas toggle */
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition:
+    background-color 0.3s ease,
+    color            0.25s ease,
+    border-color     0.25s ease,
+    fill             0.25s ease,
+    stroke           0.25s ease !important;
+}
+
 @layer base {
   body {
     @apply bg-grafit-850 text-grafit-100 antialiased;
@@ -137,7 +181,12 @@ html.light .bg-nocny-900  { background-color: #e5e6df !important; }
 /* borders */
 html.light .border-grafit-600,
 html.light .border-grafit-700 { border-color: #c8c9bb !important; }
+html.light .divide-grafit-700 > * + *,
+html.light .divide-grafit-800 > * + *,
 html.light .divide-nocny-700  > * + * { border-color: #c8c9bb !important; }
+
+/* aktywna zakładka nav — wyraźniejsze tło i ciemny tekst w light modzie */
+html.light .nav-aktywna { background-color: #d6d8ca !important; color: #1f201a !important; }
 
 /* Autofill override — prevents browser yellow background */
 input:-webkit-autofill,

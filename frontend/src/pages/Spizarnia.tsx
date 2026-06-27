@@ -6,6 +6,7 @@ import { spizarnia, paragony, wydarzenia as wydarzeniaApi, Produkt, SugestiaProd
 import BarcodeScanner from '../components/BarcodeScanner'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import { IconProdukt } from '../components/ikony'
+import { useTheme } from '../lib/theme'
 
 // Kolory tła kafelków gdy brak zdjęcia
 const KOLOR_KATEGORII: Record<string, string> = {
@@ -286,6 +287,7 @@ const defaultForm: FormState = {
 }
 
 export default function Spizarnia() {
+  const { light } = useTheme()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
@@ -297,6 +299,11 @@ export default function Spizarnia() {
   const [klasyfikuje, setKlasyfikuje] = useState(false)
   const [skanerOtwarty, setSkanerOtwarty] = useState(false)
   const [wyborSkanera, setWyborSkanera] = useState(false)
+  const [zamykanieSelektora, setZamykanieSelektora] = useState(false)
+  const zamknijSelektor = useCallback(() => {
+    setZamykanieSelektora(true)
+    setTimeout(() => { setWyborSkanera(false); setZamykanieSelektora(false) }, 220)
+  }, [])
   const [paragonLaduje, setParagonLaduje] = useState(false)
   const [paragonProdukty, setParagonProdukty] = useState<{ name: string; quantity: number; category: string; image_url?: string }[] | null>(null)
   const paragonCameraRef = useRef<HTMLInputElement>(null)
@@ -569,18 +576,23 @@ export default function Spizarnia() {
       <input ref={paragonGaleriaRef} type="file" accept="image/*" className="hidden" onChange={handleParagonFile} />
 
       {wyborSkanera && (
-        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setWyborSkanera(false)}>
-          <div className="absolute inset-0 bg-black/50" />
+        <div className="fixed inset-0 z-50 flex items-end" onClick={zamknijSelektor}>
+          <div className={`absolute inset-0 ${zamykanieSelektora ? 'animate-fade-in [animation-direction:reverse]' : 'animate-fade-in'} ${light ? 'bg-black/20' : 'bg-black/50'}`} />
           <div
-            className="relative w-full bg-grafit-800 border-t border-grafit-700 rounded-t-2xl overflow-hidden"
+            className={`relative w-full rounded-t-2xl overflow-hidden ${zamykanieSelektora ? 'animate-slide-up-out' : 'animate-slide-up'}`}
+            style={light
+              ? { background: '#ffffff', borderTop: '1px solid #d4d5c9' }
+              : { background: '#26271f', borderTop: '1px solid #34362b' }
+            }
             onClick={e => e.stopPropagation()}
           >
             <div className="flex flex-col divide-y divide-grafit-700">
               <button
-                className="flex items-center gap-3.5 px-5 py-4 text-left active:bg-grafit-700 transition-colors"
-                onClick={() => { setWyborSkanera(false); setSkanerOtwarty(true) }}
+                className="flex items-center gap-3.5 px-5 py-4 text-left active:bg-grafit-700 transition-colors animate-slide-row"
+                style={{ animationDelay: '60ms' }}
+                onClick={() => { zamknijSelektor(); setTimeout(() => setSkanerOtwarty(true), 220) }}
               >
-                <div className="w-8 h-8 rounded-lg bg-grafit-700 border border-grafit-600 flex items-center justify-center shrink-0">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${light ? 'bg-grafit-300/40 border border-grafit-400/30' : 'bg-grafit-700 border border-grafit-600'}`}>
                   <svg className="w-4 h-4 text-grafit-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="M3 9V6a1 1 0 0 1 1-1h3M21 9V6a1 1 0 0 1-1-1h-3M3 15v3a1 1 0 0 0 1 1h3M21 15v3a1 1 0 0 1-1 1h-3M7 8v8M10 8v8M13 8v8M16 8v8" />
                   </svg>
@@ -591,10 +603,11 @@ export default function Spizarnia() {
                 </div>
               </button>
               <button
-                className="flex items-center gap-3.5 px-5 py-4 text-left active:bg-grafit-700 transition-colors"
-                onClick={() => { setWyborSkanera(false); paragonCameraRef.current?.click() }}
+                className="flex items-center gap-3.5 px-5 py-4 text-left active:bg-grafit-700 transition-colors animate-slide-row"
+                style={{ animationDelay: '120ms' }}
+                onClick={() => { zamknijSelektor(); setTimeout(() => paragonCameraRef.current?.click(), 220) }}
               >
-                <div className="w-8 h-8 rounded-lg bg-grafit-700 border border-grafit-600 flex items-center justify-center shrink-0">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${light ? 'bg-grafit-300/40 border border-grafit-400/30' : 'bg-grafit-700 border border-grafit-600'}`}>
                   <svg className="w-4 h-4 text-grafit-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                     <circle cx="12" cy="13" r="4" />
@@ -606,10 +619,11 @@ export default function Spizarnia() {
                 </div>
               </button>
               <button
-                className="flex items-center gap-3.5 px-5 py-4 text-left active:bg-grafit-700 transition-colors"
-                onClick={() => { setWyborSkanera(false); paragonGaleriaRef.current?.click() }}
+                className="flex items-center gap-3.5 px-5 py-4 text-left active:bg-grafit-700 transition-colors animate-slide-row"
+                style={{ animationDelay: '180ms' }}
+                onClick={() => { zamknijSelektor(); setTimeout(() => paragonGaleriaRef.current?.click(), 220) }}
               >
-                <div className="w-8 h-8 rounded-lg bg-grafit-700 border border-grafit-600 flex items-center justify-center shrink-0">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${light ? 'bg-grafit-300/40 border border-grafit-400/30' : 'bg-grafit-700 border border-grafit-600'}`}>
                   <svg className="w-4 h-4 text-grafit-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" />
                     <circle cx="8.5" cy="8.5" r="1.5" />
@@ -623,7 +637,7 @@ export default function Spizarnia() {
               </button>
               <button
                 className="px-5 py-4 text-sm text-grafit-400 font-medium text-center active:bg-grafit-700 transition-colors"
-                onClick={() => setWyborSkanera(false)}
+                onClick={zamknijSelektor}
               >
                 Anuluj
               </button>

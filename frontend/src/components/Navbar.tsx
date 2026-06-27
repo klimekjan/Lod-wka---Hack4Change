@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { powiadomienia, znajomi, Powiadomienie } from '../lib/api'
@@ -53,8 +53,18 @@ function TypBadge({ type }: { type: string }) {
 
 function NotificationCenter() {
   const [otwarty, setOtwarty] = useState(false)
+  const [zamykaniePopupu, setZamykaniePopupu] = useState(false)
   const [przegladOtwarty, setPrzegladOtwarty] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+
+  const zamknijPopup = useCallback((poZamknieciu?: () => void) => {
+    setZamykaniePopupu(true)
+    setTimeout(() => {
+      setOtwarty(false)
+      setZamykaniePopupu(false)
+      poZamknieciu?.()
+    }, 180)
+  }, [])
   const qc = useQueryClient()
   const { light } = useTheme()
 
@@ -92,14 +102,13 @@ function NotificationCenter() {
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['licznik-powiadomien'] })
       await qc.refetchQueries({ queryKey: ['powiadomienia-lista'] })
-      setOtwarty(false)
-      setPrzegladOtwarty(true)
+      zamknijPopup(() => setPrzegladOtwarty(true))
     },
   })
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOtwarty(false)
+      if (ref.current && !ref.current.contains(e.target as Node)) zamknijPopup()
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -117,7 +126,7 @@ function NotificationCenter() {
         />
       )}
       <button
-        onClick={() => setOtwarty(o => !o)}
+        onClick={() => otwarty ? zamknijPopup() : setOtwarty(true)}
         className="relative shrink-0 p-1.5 rounded-md text-grafit-400 hover:text-grafit-100 hover:bg-grafit-700 transition-colors"
         title="Powiadomienia"
       >
@@ -134,7 +143,7 @@ function NotificationCenter() {
 
       {otwarty && (
         <div
-          className="fixed left-1/2 -translate-x-1/2 top-14 w-[calc(100vw-1.5rem)] max-w-80 rounded-xl shadow-2xl z-50 overflow-hidden md:absolute md:left-auto md:translate-x-0 md:right-0 md:top-full md:mt-2 md:w-80"
+          className={`fixed left-1/2 -translate-x-1/2 top-14 w-[calc(100vw-1.5rem)] max-w-80 rounded-xl shadow-2xl z-50 overflow-hidden md:absolute md:left-auto md:translate-x-0 md:right-0 md:top-full md:mt-2 md:w-80 ${zamykaniePopupu ? 'animate-slide-down-out' : 'animate-slide-down'}`}
           style={{
             background: light
               ? 'radial-gradient(ellipse at top right, rgba(239,68,68,0.09) 0%, transparent 55%), radial-gradient(ellipse at bottom left, rgba(239,68,68,0.04) 0%, transparent 50%), #f5f5f3'
@@ -147,7 +156,7 @@ function NotificationCenter() {
               {doPrzegladu.length > 0 && (
                 <button
                   className="text-xs font-semibold text-limonka-400 hover:text-limonka-300 transition-colors"
-                  onClick={() => { setOtwarty(false); setPrzegladOtwarty(true) }}
+                  onClick={() => zamknijPopup(() => setPrzegladOtwarty(true))}
                 >
                   Przejrzyj ({doPrzegladu.length})
                 </button>
@@ -172,7 +181,7 @@ function NotificationCenter() {
               <p className="text-xs text-grafit-400 text-center py-8">Brak powiadomień</p>
             )}
             {lista.map((n: Powiadomienie, i: number) => (
-              <div key={n.id}>
+              <div key={n.id} className="animate-slide-row-up" style={{ animationDelay: `${i * 55}ms` }}>
                 {i > 0 && <div className="mx-3 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(239,68,68,0.15) 40%, rgba(239,68,68,0.15) 60%, transparent)' }} />}
               <div
                 className={`px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors rounded-lg mx-1 my-0.5 ${!n.read ? 'bg-white/5' : ''}`}
@@ -231,7 +240,7 @@ export default function Navbar() {
       to={href}
       className={`px-2.5 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors relative ${
         pathname === href
-          ? 'bg-grafit-700 text-limonka-400'
+          ? 'nav-aktywna bg-grafit-700 text-limonka-400'
           : 'text-grafit-400 hover:text-grafit-100 hover:bg-grafit-700'
       }`}
     >
