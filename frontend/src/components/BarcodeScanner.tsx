@@ -38,6 +38,29 @@ export default function BarcodeScanner({ onScan, onSearch, onClose }: Props) {
   }
 
   useEffect(() => {
+    // Kamera wymaga HTTPS (lub localhost). Na plain HTTP mediaDevices jest undefined.
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setStan('blad')
+      const insecure =
+        location.protocol === 'http:' &&
+        !['localhost', '127.0.0.1'].includes(location.hostname)
+      setBladTekst(
+        insecure
+          ? 'Kamera wymaga HTTPS. Skorzystaj z pola ręcznego wpisywania poniżej.'
+          : 'Kamera niedostępna w tej przeglądarce.',
+      )
+      setReczneOtwarte(true)
+      return
+    }
+
+    // BarcodeDetector może nie istnieć gdy polyfill się nie załadował
+    if (typeof BarcodeDetector === 'undefined') {
+      setStan('blad')
+      setBladTekst('Wykrywanie kodów niedostępne. Skorzystaj z pola ręcznego wpisywania.')
+      setReczneOtwarte(true)
+      return
+    }
+
     let stream: MediaStream | null = null
     let interval = 0
     let active = true
