@@ -103,29 +103,33 @@ export default function StronaGlowna() {
       </section>
 
       {/* Stats */}
-      <section className="bg-nocny-900 py-16 px-6">
+      <section className="bg-nocny-900 py-20 px-6">
         <div className="max-w-5xl mx-auto">
-          <p className="text-center text-nocny-400 text-xs font-semibold uppercase tracking-widest mb-12">
-            Skala globalnego problemu
-          </p>
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-red-400 mb-3">Liczby nie kłamią</p>
+            <h2 className="font-display text-4xl sm:text-5xl font-bold text-white leading-tight">
+              Skala globalnego<br />
+              <span className="text-red-400">problemu</span>
+            </h2>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-nocny-700">
             <div className="text-center px-8 py-6">
-              <div className="text-5xl font-black text-zielony-400 mb-2">1/3</div>
-              <div className="text-white font-semibold text-lg mb-1">całej żywności marnowane</div>
+              <div className="font-display text-7xl font-black text-red-400 mb-2 leading-none">1/3</div>
+              <div className="text-white font-semibold text-lg mb-2">całej żywności marnowane</div>
               <div className="text-slate-500 text-sm leading-relaxed">
                 Tyle produkowanej żywności nigdy nie trafia na talerz. (FAO, 2023)
               </div>
             </div>
             <div className="text-center px-8 py-6">
-              <div className="text-5xl font-black text-zielony-400 mb-2">8%</div>
-              <div className="text-white font-semibold text-lg mb-1">globalnych emisji CO₂</div>
+              <div className="font-display text-7xl font-black text-red-400 mb-2 leading-none">8%</div>
+              <div className="text-white font-semibold text-lg mb-2">globalnych emisji CO₂</div>
               <div className="text-slate-500 text-sm leading-relaxed">
-                Marnotrawstwo żywności odpowiada za 8--10% wszystkich emisji gazów cieplarnianych.
+                Marnotrawstwo żywności odpowiada za 8–10% wszystkich emisji gazów cieplarnianych.
               </div>
             </div>
             <div className="text-center px-8 py-6">
-              <div className="text-5xl font-black text-zielony-400 mb-2">9 mln t</div>
-              <div className="text-white font-semibold text-lg mb-1">marnuje Polska rocznie</div>
+              <div className="font-display text-7xl font-black text-red-400 mb-2 leading-none">9<span className="text-4xl"> mln t</span></div>
+              <div className="text-white font-semibold text-lg mb-2">marnuje Polska rocznie</div>
               <div className="text-slate-500 text-sm leading-relaxed">
                 Polska jest 4. największym producentem odpadów żywnościowych w Europie.
               </div>
@@ -138,11 +142,12 @@ export default function StronaGlowna() {
       <section className="py-20 px-6">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <p className="text-zielony-500 text-xs font-semibold uppercase tracking-widest mb-3">
-              Problem globalny
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-5 leading-snug">
-              Marnotrawstwo żywności to globalny kryzys
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-0.5 bg-red-500" />
+              <p className="text-red-400 text-xs font-bold uppercase tracking-[0.2em]">Problem globalny</p>
+            </div>
+            <h2 className="font-display text-4xl sm:text-5xl font-bold text-white mb-5 leading-tight">
+              Marnotrawstwo żywności<br />to globalny kryzys
             </h2>
             <p className="text-slate-400 leading-relaxed mb-4">
               Każdego roku marnujemy 1,3 miliarda ton jedzenia. W tym samym czasie ponad
@@ -178,11 +183,12 @@ export default function StronaGlowna() {
             <div className="absolute inset-0 bg-gradient-to-t from-nocny-900/60 to-transparent" />
           </div>
           <div className="order-1 md:order-2">
-            <p className="text-zielony-500 text-xs font-semibold uppercase tracking-widest mb-3">
-              Klimat
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-5 leading-snug">
-              Bezpośredni wpływ na zmiany klimatu
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-0.5 bg-red-500" />
+              <p className="text-red-400 text-xs font-bold uppercase tracking-[0.2em]">Klimat</p>
+            </div>
+            <h2 className="font-display text-4xl sm:text-5xl font-bold text-white mb-5 leading-tight">
+              Bezpośredni wpływ<br />na zmiany klimatu
             </h2>
             <p className="text-slate-400 leading-relaxed mb-4">
               Kiedy jedzenie trafia na wysypisko, rozkłada się i wydziela metan -- gaz o 80 razy
@@ -201,10 +207,11 @@ export default function StronaGlowna() {
       <section className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="mb-12">
-            <p className="text-zielony-500 text-xs font-semibold uppercase tracking-widest mb-3">
-              Funkcje
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-0.5 bg-zielony-500" />
+              <p className="text-zielony-400 text-xs font-bold uppercase tracking-[0.2em]">Funkcje</p>
+            </div>
+            <h2 className="font-display text-4xl sm:text-5xl font-bold text-white">
               Wszystko czego potrzebujesz
             </h2>
           </div>
