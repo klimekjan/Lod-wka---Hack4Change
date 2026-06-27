@@ -269,6 +269,9 @@ export default function Spizarnia() {
   const [akcjaOk, setAkcjaOk] = useState('')
   const [brakAdresu, setBrakAdresu] = useState(false)
   const [zaznaczone, setZaznaczone] = useState<Set<number>>(new Set())
+  const [kategoriaRecznie, setKategoriaRecznie] = useState(false)
+  const [nazwaZeSkanu, setNazwaZeSkanu] = useState(false)
+  const [kategoriaAutoUstawiona, setKategoriaAutoUstawiona] = useState(false)
 
   const { data: produkty = [], isLoading, error } = useQuery({
     queryKey: ['spizarnia', 'active'],
@@ -287,12 +290,30 @@ export default function Spizarnia() {
     }
   }, [wydarzenieId, produkty])
 
+  useEffect(() => {
+    if (form.name.length < 3 || kategoriaRecznie || nazwaZeSkanu) return
+    const timer = setTimeout(async () => {
+      try {
+        const res = await spizarnia.kategoria(form.name)
+        const kat = res.data.kategoria
+        if (kat !== 'inne') {
+          setField('category', kat)
+          setKategoriaAutoUstawiona(true)
+        }
+      } catch {/* ignore */}
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [form.name, kategoriaRecznie, nazwaZeSkanu])
+
   const mutacjaDodaj = useMutation({
     mutationFn: (dane: Partial<Produkt>) => spizarnia.dodaj(dane).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
       setForm(defaultForm)
       setFormularzOtwarty(false)
+      setKategoriaRecznie(false)
+      setNazwaZeSkanu(false)
+      setKategoriaAutoUstawiona(false)
     },
   })
 
@@ -346,6 +367,9 @@ export default function Spizarnia() {
         imageUrl: d.image_url || '',
         frozen: prev.frozen,
       }))
+      setNazwaZeSkanu(true)
+      setKategoriaRecznie(false)
+      setKategoriaAutoUstawiona(false)
       setSkanerOtwarty(false)
       setFormularzOtwarty(true)
     } catch {
@@ -402,9 +426,9 @@ export default function Spizarnia() {
     mutacjaPrzekazProdukty.mutate({ id: wydarzenieId, ids: [...zaznaczone] })
   }
 
-  const przeterminowane = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left < 0)
-  const naWylocie = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left >= 0 && p.days_left <= 3)
-  const swieże = produkty.filter(p => p.days_left === undefined || p.days_left === null || p.days_left > 3)
+  const krotkoterminowe = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left < 7)
+  const sredniotrwale = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left >= 7 && p.days_left < 30)
+  const dlugoterminowe = produkty.filter(p => p.days_left === undefined || p.days_left === null || p.days_left >= 30)
 
   const trybWyboru = wydarzenieId !== null
   const nazwaNazwy = wydarzenieSzczegoly?.name ?? `wydarzenie #${wydarzenieId}`
@@ -507,7 +531,7 @@ export default function Spizarnia() {
               <input
                 className="input"
                 value={form.name}
-                onChange={e => setField('name', e.target.value)}
+                onChange={e => { if (nazwaZeSkanu) setNazwaZeSkanu(false); setField('name', e.target.value) }}
                 required
                 placeholder="np. Mleko 3,2%"
                 autoFocus
@@ -536,9 +560,12 @@ export default function Spizarnia() {
           </div>
           <div>
             <label className="block text-sm font-medium text-grafit-300 mb-1">Kategoria</label>
-            <select className="input" value={form.category} onChange={e => setField('category', e.target.value)}>
+            <select className="input" value={form.category} onChange={e => { setKategoriaRecznie(true); setKategoriaAutoUstawiona(false); setField('category', e.target.value) }}>
               {KATEGORIE.map(k => <option key={k}>{k}</option>)}
             </select>
+            {kategoriaAutoUstawiona && (
+              <p className="text-xs text-zielony-400 mt-1">dobrana automatycznie</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-grafit-300 mb-1">
@@ -573,7 +600,7 @@ export default function Spizarnia() {
             <button
               type="button"
               className="btn-ghost"
-              onClick={() => { setForm(defaultForm); setFormularzOtwarty(false) }}
+              onClick={() => { setForm(defaultForm); setFormularzOtwarty(false); setKategoriaRecznie(false); setNazwaZeSkanu(false); setKategoriaAutoUstawiona(false) }}
             >
               Anuluj
             </button>
@@ -593,13 +620,13 @@ export default function Spizarnia() {
         </div>
       )}
 
-      {przeterminowane.length > 0 && (
+      {krotkoterminowe.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-red-400 uppercase tracking-widest mb-2">
-            Przeterminowane ({przeterminowane.length})
+          <h2 className="font-display text-sm font-semibold text-bursztyn-400 mb-2">
+            Krótkoterminowe - do 7 dni ({krotkoterminowe.length})
           </h2>
           <div className="grid grid-cols-3 gap-2">
-            {przeterminowane.map(p => (
+            {krotkoterminowe.map(p => (
               <KafelekProduktu
                 key={p.id}
                 produkt={p}
@@ -613,13 +640,13 @@ export default function Spizarnia() {
         </section>
       )}
 
-      {naWylocie.length > 0 && (
+      {sredniotrwale.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-bursztyn-400 uppercase tracking-widest mb-2">
-            Na wylocie ({naWylocie.length})
+          <h2 className="font-display text-sm font-semibold text-grafit-400 mb-2">
+            Średniotrwałe - 7–30 dni ({sredniotrwale.length})
           </h2>
           <div className="grid grid-cols-3 gap-2">
-            {naWylocie.map(p => (
+            {sredniotrwale.map(p => (
               <KafelekProduktu
                 key={p.id}
                 produkt={p}
@@ -633,13 +660,13 @@ export default function Spizarnia() {
         </section>
       )}
 
-      {swieże.length > 0 && (
+      {dlugoterminowe.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-grafit-400 uppercase tracking-widest mb-2">
-            Świeże ({swieże.length})
+          <h2 className="font-display text-sm font-semibold text-zielony-400 mb-2">
+            Długoterminowe - ponad 30 dni ({dlugoterminowe.length})
           </h2>
           <div className="grid grid-cols-3 gap-2">
-            {swieże.map(p => (
+            {dlugoterminowe.map(p => (
               <KafelekProduktu
                 key={p.id}
                 produkt={p}

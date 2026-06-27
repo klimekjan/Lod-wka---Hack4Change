@@ -128,6 +128,11 @@ class BarcodeLookupResponse(BaseModel):
     default_shelf_days: Optional[int] = None
 
 
+class KategoriaResponse(BaseModel):
+    kategoria: str
+    pewnosc: float
+
+
 # --- Dashboard ---
 
 class DashboardStats(BaseModel):
