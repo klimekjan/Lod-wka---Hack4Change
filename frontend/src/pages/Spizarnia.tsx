@@ -11,6 +11,51 @@ const KATEGORIE = [
 ]
 const JEDNOSTKI = ['szt.', 'kg', 'g', 'l', 'ml', 'opak.']
 
+const SHELF_LIFE: Record<string, { lodowka: number; zamrazarka: number }> = {
+  'nabiał':            { lodowka: 10,  zamrazarka: 180 },
+  'mięso surowe':      { lodowka: 3,   zamrazarka: 120 },
+  'ryby':              { lodowka: 3,   zamrazarka: 90  },
+  'warzywa liściaste': { lodowka: 5,   zamrazarka: 12  },
+  'warzywa twarde':    { lodowka: 12,  zamrazarka: 90  },
+  'owoce':             { lodowka: 10,  zamrazarka: 180 },
+  'pieczywo':          { lodowka: 5,   zamrazarka: 60  },
+  'jajka':             { lodowka: 28,  zamrazarka: 180 },
+  'napoje':            { lodowka: 5,   zamrazarka: 180 },
+  'przetwory':         { lodowka: 30,  zamrazarka: 365 },
+  'inne':              { lodowka: 7,   zamrazarka: 90  },
+}
+
+function obliczDateWaznosci(kategoria: string, frozen: boolean): string {
+  const sl = SHELF_LIFE[kategoria] ?? SHELF_LIFE['inne']
+  const dni = frozen ? sl.zamrazarka : sl.lodowka
+  const d = new Date()
+  d.setDate(d.getDate() + dni)
+  return d.toISOString().slice(0, 10)
+}
+
+const _WAGA_SZT: Record<string, number> = {
+  'nabiał': 0.15, 'mięso surowe': 0.20, 'ryby': 0.15, 'warzywa liściaste': 0.12,
+  'warzywa twarde': 0.15, 'owoce': 0.15, 'pieczywo': 0.08, 'jajka': 0.06,
+  'napoje': 0.33, 'przetwory': 0.35, 'inne': 0.15,
+}
+const _WAGA_OPAK: Record<string, number> = {
+  'nabiał': 0.50, 'mięso surowe': 0.35, 'ryby': 0.25, 'warzywa liściaste': 0.20,
+  'warzywa twarde': 0.40, 'owoce': 0.50, 'pieczywo': 0.45, 'jajka': 0.60,
+  'napoje': 0.75, 'przetwory': 0.40, 'inne': 0.30,
+}
+
+function szacujKgFrontend(quantity: number, unit: string, category: string): number {
+  const u = unit.trim().toLowerCase()
+  if (u === 'kg')   return quantity
+  if (u === 'g')    return quantity * 0.001
+  if (u === 'dag')  return quantity * 0.01
+  if (u === 'l')    return quantity
+  if (u === 'ml')   return quantity * 0.001
+  if (u === 'szt.') return quantity * (_WAGA_SZT[category] ?? 0.15)
+  if (u === 'opak.') return quantity * (_WAGA_OPAK[category] ?? 0.30)
+  return quantity * 0.15
+}
+
 function kolorDaty(dniDo?: number | null): string {
   if (dniDo === undefined || dniDo === null) return 'bg-grafit-700/80 text-grafit-100'
   if (dniDo < 0)  return 'bg-red-600/80 text-white'
@@ -34,12 +79,36 @@ function KafelekProduktu({
   onToggle,
 }: {
   produkt: Produkt
-  onAkcja: (action: string) => void
+  onAkcja: (action: string, weightKg?: number) => void
   trybWyboru?: boolean
   zaznaczony?: boolean
   onToggle?: () => void
 }) {
   const [otwarty, setOtwarty] = useState(false)
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
+  const [weightInput, setWeightInput] = useState('')
+
+  function wybierzAkcje(action: string) {
+    setPendingAction(action)
+    setWeightInput('')
+  }
+
+  function potwierdz() {
+    if (!pendingAction) return
+    const kg = parseFloat(weightInput)
+    onAkcja(pendingAction, isNaN(kg) || kg <= 0 ? undefined : kg)
+    setPendingAction(null)
+    setOtwarty(false)
+  }
+
+  function pomin() {
+    if (!pendingAction) return
+    onAkcja(pendingAction)
+    setPendingAction(null)
+    setOtwarty(false)
+  }
+
+  const szacunek = szacujKgFrontend(produkt.quantity, produkt.unit, produkt.category)
 
   function handleClick() {
     if (trybWyboru) {
@@ -99,30 +168,67 @@ function KafelekProduktu({
           className="absolute inset-0 bg-black/65 flex flex-col items-center justify-center gap-2 p-2"
           onClick={e => e.stopPropagation()}
         >
-          <button
-            className="w-full bg-limonka-400 text-grafit-900 text-xs font-semibold py-1.5 rounded-full active:bg-limonka-500"
-            onClick={() => { onAkcja('eaten'); setOtwarty(false) }}
-          >
-            Zjedzone
-          </button>
-          <button
-            className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-full active:bg-white/30"
-            onClick={() => { onAkcja('wasted'); setOtwarty(false) }}
-          >
-            Wyrzucone
-          </button>
-          <button
-            className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-full active:bg-white/30"
-            onClick={() => { onAkcja('shared'); setOtwarty(false) }}
-          >
-            Oddaj
-          </button>
-          <button
-            className="mt-1 text-white/60 text-xs"
-            onClick={() => setOtwarty(false)}
-          >
-            zamknij
-          </button>
+          {pendingAction === null ? (
+            <>
+              <button
+                className="w-full bg-limonka-400 text-grafit-900 text-xs font-semibold py-1.5 rounded-full active:bg-limonka-500"
+                onClick={() => wybierzAkcje('eaten')}
+              >
+                Zjedzone
+              </button>
+              <button
+                className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-full active:bg-white/30"
+                onClick={() => wybierzAkcje('wasted')}
+              >
+                Wyrzucone
+              </button>
+              <button
+                className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-full active:bg-white/30"
+                onClick={() => wybierzAkcje('shared')}
+              >
+                Oddaj
+              </button>
+              <button
+                className="mt-1 text-white/60 text-xs"
+                onClick={() => setOtwarty(false)}
+              >
+                zamknij
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-white text-xs font-semibold text-center">Podaj wagę (opcjonalnie)</p>
+              <p className="text-white/50 text-[10px] text-center">
+                szacunek: ~{szacunek.toFixed(2)} kg
+              </p>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder={`np. ${szacunek.toFixed(2)}`}
+                value={weightInput}
+                onChange={e => setWeightInput(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                className="w-full text-center bg-white/15 text-white text-sm rounded-lg py-1.5 outline-none placeholder-white/40"
+                autoFocus
+              />
+              <p className="text-white/40 text-[9px] text-center -mt-1">
+                Dokładna waga poprawia statystyki Trackera
+              </p>
+              <button
+                className="w-full bg-limonka-400 text-grafit-900 text-xs font-semibold py-1.5 rounded-full"
+                onClick={potwierdz}
+              >
+                Potwierdź
+              </button>
+              <button
+                className="text-white/60 text-xs"
+                onClick={pomin}
+              >
+                Pomiń wagę
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -136,6 +242,7 @@ interface FormState {
   unit: string
   expiresAt: string
   imageUrl: string
+  frozen: boolean
 }
 
 const defaultForm: FormState = {
@@ -143,8 +250,9 @@ const defaultForm: FormState = {
   category: 'inne',
   quantity: '1',
   unit: 'szt.',
-  expiresAt: '',
+  expiresAt: obliczDateWaznosci('inne', false),
   imageUrl: '',
+  frozen: false,
 }
 
 export default function Spizarnia() {
@@ -189,8 +297,8 @@ export default function Spizarnia() {
   })
 
   const mutacjaAkcja = useMutation({
-    mutationFn: ({ id, action }: { id: number; action: string }) =>
-      spizarnia.akcja(id, action).then(r => r.data),
+    mutationFn: ({ id, action, weightKg }: { id: number; action: string; weightKg?: number }) =>
+      spizarnia.akcja(id, action, undefined, weightKg).then(r => r.data),
     onSuccess: (_data, { action }) => {
       queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
       setBrakAdresu(false)
@@ -228,17 +336,16 @@ export default function Spizarnia() {
         setForm(f => ({ ...f, name: '' }))
         return
       }
-      const expiresAt = d.default_shelf_days
-        ? new Date(Date.now() + d.default_shelf_days * 86400_000).toISOString().slice(0, 10)
-        : ''
-      setForm({
-        name: d.name,
-        category: d.category || 'inne',
+      const cat = d.category || 'inne'
+      setForm(prev => ({
+        name: d.name ?? '',
+        category: cat,
         quantity: '1',
         unit: 'szt.',
-        expiresAt,
+        expiresAt: obliczDateWaznosci(cat, prev.frozen),
         imageUrl: d.image_url || '',
-      })
+        frozen: prev.frozen,
+      }))
       setSkanerOtwarty(false)
       setFormularzOtwarty(true)
     } catch {
@@ -269,7 +376,16 @@ export default function Spizarnia() {
   }
 
   function setField<K extends keyof FormState>(key: K, val: FormState[K]) {
-    setForm(f => ({ ...f, [key]: val }))
+    setForm(f => {
+      const next = { ...f, [key]: val }
+      if (key === 'category' || key === 'frozen') {
+        next.expiresAt = obliczDateWaznosci(
+          key === 'category' ? (val as string) : next.category,
+          key === 'frozen' ? (val as boolean) : next.frozen,
+        )
+      }
+      return next
+    })
   }
 
   function toggleZaznaczenie(id: number) {
@@ -427,7 +543,7 @@ export default function Spizarnia() {
           <div>
             <label className="block text-sm font-medium text-grafit-300 mb-1">
               Termin ważności
-              <span className="text-grafit-400 font-normal ml-1">(opcjonalnie)</span>
+              <span className="text-grafit-400 font-normal ml-1">(auto z kategorii)</span>
             </label>
             <input
               className="input"
@@ -436,6 +552,17 @@ export default function Spizarnia() {
               onChange={e => setField('expiresAt', e.target.value)}
             />
           </div>
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <div
+              className={`w-10 h-5 rounded-full transition-colors relative ${form.frozen ? 'bg-blue-500' : 'bg-grafit-600'}`}
+              onClick={() => setField('frozen', !form.frozen)}
+            >
+              <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.frozen ? 'translate-x-5' : 'translate-x-0'}`} />
+            </div>
+            <span className="text-sm text-grafit-300">
+              W zamrażarce
+            </span>
+          </label>
           {mutacjaDodaj.error && (
             <p className="text-sm text-red-400">Błąd zapisu -- spróbuj ponownie.</p>
           )}
@@ -476,7 +603,7 @@ export default function Spizarnia() {
               <KafelekProduktu
                 key={p.id}
                 produkt={p}
-                onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
+                onAkcja={(action, weightKg) => mutacjaAkcja.mutate({ id: p.id, action, weightKg })}
                 trybWyboru={trybWyboru}
                 zaznaczony={zaznaczone.has(p.id)}
                 onToggle={() => toggleZaznaczenie(p.id)}
@@ -496,7 +623,7 @@ export default function Spizarnia() {
               <KafelekProduktu
                 key={p.id}
                 produkt={p}
-                onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
+                onAkcja={(action, weightKg) => mutacjaAkcja.mutate({ id: p.id, action, weightKg })}
                 trybWyboru={trybWyboru}
                 zaznaczony={zaznaczone.has(p.id)}
                 onToggle={() => toggleZaznaczenie(p.id)}
@@ -516,7 +643,7 @@ export default function Spizarnia() {
               <KafelekProduktu
                 key={p.id}
                 produkt={p}
-                onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
+                onAkcja={(action, weightKg) => mutacjaAkcja.mutate({ id: p.id, action, weightKg })}
                 trybWyboru={trybWyboru}
                 zaznaczony={zaznaczone.has(p.id)}
                 onToggle={() => toggleZaznaczenie(p.id)}

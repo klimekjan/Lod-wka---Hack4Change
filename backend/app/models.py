@@ -50,9 +50,10 @@ class ConsumptionLog(SQLModel, table=True):
     category: str
     quantity: float
     unit: str
-    # eaten | wasted
+    # eaten | wasted | shared
     action: str
     weight_kg: Optional[float] = None
+    days_left_at_log: Optional[int] = None
     logged_at: datetime = Field(default_factory=datetime.utcnow)
 
 

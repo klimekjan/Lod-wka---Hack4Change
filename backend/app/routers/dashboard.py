@@ -15,19 +15,45 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 
-_UNIT_TO_KG: dict[str, float] = {
-    "kg": 1.0,
-    "g": 0.001,
-    "dag": 0.01,
-    "l": 1.0,
-    "ml": 0.001,
-    "szt.": 0.15,
-    "opak.": 0.3,
+_WAGA_SZT: dict[str, float] = {
+    "nabiał":            0.15,
+    "mięso surowe":      0.20,
+    "ryby":              0.15,
+    "warzywa liściaste": 0.12,
+    "warzywa twarde":    0.15,
+    "owoce":             0.15,
+    "pieczywo":          0.08,
+    "jajka":             0.06,
+    "napoje":            0.33,
+    "przetwory":         0.35,
+    "inne":              0.15,
+}
+
+_WAGA_OPAK: dict[str, float] = {
+    "nabiał":            0.50,
+    "mięso surowe":      0.35,
+    "ryby":              0.25,
+    "warzywa liściaste": 0.20,
+    "warzywa twarde":    0.40,
+    "owoce":             0.50,
+    "pieczywo":          0.45,
+    "jajka":             0.60,
+    "napoje":            0.75,
+    "przetwory":         0.40,
+    "inne":              0.30,
 }
 
 
-def _szacuj_kg(quantity: float, unit: str) -> float:
-    return quantity * _UNIT_TO_KG.get(unit.strip().lower(), 0.15)
+def _szacuj_kg(quantity: float, unit: str, category: str = "inne") -> float:
+    u = unit.strip().lower()
+    if u == "kg":   return quantity
+    if u == "g":    return quantity * 0.001
+    if u == "dag":  return quantity * 0.01
+    if u == "l":    return quantity
+    if u == "ml":   return quantity * 0.001
+    if u == "szt.": return quantity * _WAGA_SZT.get(category, 0.15)
+    if u == "opak.": return quantity * _WAGA_OPAK.get(category, 0.30)
+    return quantity * 0.15
 
 
 def _wczytaj_impact() -> pd.DataFrame:
@@ -56,46 +82,60 @@ def pobierz_dashboard(
 
     kg_uratowane = 0.0
     kg_zmarnowane = 0.0
+    kg_oddane = 0.0
     zl_zaoszcz = 0.0
     co2_unikniete = 0.0
+    liczba_uratowan = 0
+    kg_na_styk = 0.0
 
     for log in logi:
-        kg = log.weight_kg if log.weight_kg else _szacuj_kg(log.quantity, log.unit)
+        kg = log.weight_kg if log.weight_kg else _szacuj_kg(log.quantity, log.unit, log.category)
         co2_f, cena_f = wspolczynniki(log.category)
-        if log.action == "eaten":
+
+        if log.action in ("eaten", "shared"):
             kg_uratowane += kg
             zl_zaoszcz += kg * cena_f
             co2_unikniete += kg * co2_f
-        else:
+            if log.action == "shared":
+                kg_oddane += kg
+            if log.days_left_at_log is not None and log.days_left_at_log <= 2:
+                liczba_uratowan += 1
+                kg_na_styk += kg
+        elif log.action == "wasted":
             kg_zmarnowane += kg
 
-    # Streak - ile dni pod rzad bez "wasted" (liczone od założenia konta)
-    streak = _oblicz_streak(logi, current_user.created_at)
+    saved_kg = kg_uratowane
+    lost_kg = kg_zmarnowane
+    total_kg = saved_kg + lost_kg
+    wskaznik = round(100.0 * saved_kg / total_kg, 1) if total_kg > 0 else 0.0
 
-    # Dane tygodniowe (ostatnie 7 dni)
+    streak = _oblicz_streak(logi)
     tygodniowe = _dane_tygodniowe(logi, _IMPACT)
 
     return DashboardStats(
         kg_uratowane=round(kg_uratowane, 2),
         kg_zmarnowane=round(kg_zmarnowane, 2),
+        kg_oddane=round(kg_oddane, 2),
         zl_zaoszczedzone=round(zl_zaoszcz, 2),
         co2_unikniete=round(co2_unikniete, 2),
         streak_dni=streak,
+        wskaznik_uratowania=wskaznik,
+        liczba_uratowan=liczba_uratowan,
+        kg_na_styk=round(kg_na_styk, 2),
         tygodniowe=tygodniowe,
     )
 
 
-def _oblicz_streak(logi: list, user_created_at: datetime) -> int:
-    # "Dni bez marnowania" — liczone wstecz od dziś do daty rejestracji, do pierwszego dnia
-    # z wpisem "wasted". Brak logów = brak marnowania → spójnie liczymy dni od rejestracji
-    # (bez wczesnego return 0, ktory tworzyl niespojnosc wzgledem usera z samym "eaten").
+def _oblicz_streak(logi: list) -> int:
+    if not logi:
+        return 0
+    pierwsza_akcja = min(log.logged_at.date() for log in logi)
     dni_z_marnotrawstwem = {
         log.logged_at.date() for log in logi if log.action == "wasted"
     }
-    poczatek = user_created_at.date()
     streak = 0
     dzien = datetime.utcnow().date()
-    while dzien not in dni_z_marnotrawstwem and dzien >= poczatek:
+    while dzien not in dni_z_marnotrawstwem and dzien >= pierwsza_akcja:
         streak += 1
         dzien -= timedelta(days=1)
     return streak
@@ -105,14 +145,13 @@ def _dane_tygodniowe(logi: list, impact: pd.DataFrame) -> List[dict]:
     dni = [(datetime.utcnow() - timedelta(days=i)).date() for i in range(6, -1, -1)]
     okno = set(dni)
 
-    # Jeden przebieg po logach zamiast 7 filtrowań całości.
     kubelki: dict = {d: {"uratowane": 0.0, "zmarnowane": 0.0} for d in dni}
     for l in logi:
         d = l.logged_at.date()
         if d not in okno:
             continue
-        kg = l.weight_kg or _szacuj_kg(l.quantity, l.unit)
-        if l.action == "eaten":
+        kg = l.weight_kg or _szacuj_kg(l.quantity, l.unit, l.category)
+        if l.action in ("eaten", "shared"):
             kubelki[d]["uratowane"] += kg
         elif l.action == "wasted":
             kubelki[d]["zmarnowane"] += kg

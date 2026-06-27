@@ -3,21 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts'
 import { dashboard } from '../lib/api'
-import { useTheme, cardStyle } from '../lib/theme'
-
-function KartaStat({ label, value, unit, kolor }: {
-  label: string; value: number; unit: string; kolor: string
-}) {
-  return (
-    <div className="karta text-center">
-      <p className="text-xs font-semibold text-grafit-400 uppercase tracking-wide mb-1">{label}</p>
-      <p className={`font-display text-2xl font-semibold ${kolor}`}>
-        {value.toLocaleString('pl-PL', { maximumFractionDigits: 1 })}
-      </p>
-      <p className="text-xs text-grafit-400 mt-0.5">{unit}</p>
-    </div>
-  )
-}
+import { useTheme, cardStyle, infoCardStyle } from '../lib/theme'
 
 function StreakBadge({ dni }: { dni: number }) {
   const { light } = useTheme()
@@ -26,7 +12,7 @@ function StreakBadge({ dni }: { dni: number }) {
       <div className="font-display text-4xl font-semibold text-limonka-400">{dni}</div>
       <div>
         <p className="font-semibold text-grafit-100">{dni === 1 ? 'dzień' : 'dni'}</p>
-        <p className="text-sm text-grafit-400">bez wyrzucania jedzenia</p>
+        <p className="text-sm text-grafit-400">passy bez wyrzucania</p>
       </div>
     </div>
   )
@@ -44,40 +30,102 @@ export default function Dashboard() {
   if (!data) return null
 
   const puste = data.kg_uratowane === 0 && data.kg_zmarnowane === 0
+  const wskaznik = data.wskaznik_uratowania
+  const wskaznikKolor = wskaznik >= 70 ? '#aee63a' : wskaznik >= 40 ? '#d97706' : '#f87171'
+  const kgZjedzone = data.kg_uratowane - data.kg_oddane
 
   return (
     <div className="space-y-5">
-      <h1 className="font-display text-2xl font-semibold text-grafit-100">Dashboard wpływu</h1>
+      <h1 className="font-display text-2xl font-semibold text-grafit-100">Tracker</h1>
 
       {puste ? (
         <div className="karta text-center py-12">
           <p className="font-medium text-grafit-100">Brak danych</p>
           <p className="text-sm text-grafit-400 mt-1">
-            Zaznaczaj produkty jako zjedzone lub wyrzucone -- tutaj pojawią się statystyki.
+            Oznaczaj produkty jako zjedzone, oddane lub wyrzucone — tutaj pojawią się statystyki.
           </p>
         </div>
       ) : (
         <>
-          <StreakBadge dni={data.streak_dni} />
-
-          <div className="grid grid-cols-3 gap-3">
-            <KartaStat label="Uratowane" value={data.kg_uratowane} unit="kg jedzenia" kolor="text-zielony-400" />
-            <KartaStat label="Zaoszczędzone" value={data.zl_zaoszczedzone} unit="zł" kolor="text-limonka-400" />
-            <KartaStat label="CO₂ uniknięte" value={data.co2_unikniete} unit="kg ekw." kolor="text-grafit-100" />
+          {/* Headline — wskaźnik uratowania */}
+          <div className="karta text-center py-6 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-grafit-400">Wskaźnik uratowania</p>
+            <p className="font-display text-6xl font-semibold" style={{ color: wskaznikKolor }}>
+              {wskaznik.toLocaleString('pl-PL', { maximumFractionDigits: 1 })}%
+            </p>
+            <p className="text-sm text-grafit-400">jedzenia uratowanego z kosza</p>
+            <div className="w-full h-2 rounded-full bg-grafit-700 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${wskaznik}%`, background: wskaznikKolor }}
+              />
+            </div>
+            <p className="text-xs text-grafit-500">
+              {data.kg_uratowane.toFixed(1)} kg uratowane · {data.kg_zmarnowane.toFixed(1)} kg wyrzucone
+            </p>
           </div>
 
-          {data.kg_zmarnowane > 0 && (
-            <div
-              className="rounded-xl p-4"
-              style={cardStyle(light, '248,113,113')}
-            >
-              <p className="text-xs font-semibold text-red-400 uppercase tracking-wide">Zmarnowane</p>
-              <p className="font-display text-xl font-semibold text-red-400 mt-0.5">
-                {data.kg_zmarnowane.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} kg
+          <StreakBadge dni={data.streak_dni} />
+
+          {/* Karta "Na styk" */}
+          {data.liczba_uratowan > 0 && (
+            <div className="rounded-xl p-4" style={cardStyle(light, '174,230,58')}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-limonka-400 mb-1">
+                Uratowane na styk
+              </p>
+              <p className="font-display text-2xl font-semibold text-grafit-100">
+                {data.liczba_uratowan} {data.liczba_uratowan === 1 ? 'produkt' : 'produktów'}
+              </p>
+              <p className="text-sm text-grafit-400 mt-0.5">
+                {data.kg_na_styk.toFixed(1)} kg złapanych przy ≤2 dniach do końca
               </p>
             </div>
           )}
 
+          {/* Rozbicie kg */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="karta text-center">
+              <p className="text-xs font-semibold text-grafit-400 uppercase tracking-wide mb-1">Zjedzone</p>
+              <p className="font-display text-2xl font-semibold text-zielony-400">
+                {kgZjedzone.toLocaleString('pl-PL', { maximumFractionDigits: 1 })}
+              </p>
+              <p className="text-xs text-grafit-400 mt-0.5">kg</p>
+            </div>
+            <div className="karta text-center">
+              <p className="text-xs font-semibold text-grafit-400 uppercase tracking-wide mb-1">Oddane</p>
+              <p className="font-display text-2xl font-semibold text-limonka-400">
+                {data.kg_oddane.toLocaleString('pl-PL', { maximumFractionDigits: 1 })}
+              </p>
+              <p className="text-xs text-grafit-400 mt-0.5">kg</p>
+            </div>
+            <div className="karta text-center">
+              <p className="text-xs font-semibold text-grafit-400 uppercase tracking-wide mb-1">Wyrzucone</p>
+              <p className="font-display text-2xl font-semibold text-red-400">
+                {data.kg_zmarnowane.toLocaleString('pl-PL', { maximumFractionDigits: 1 })}
+              </p>
+              <p className="text-xs text-grafit-400 mt-0.5">kg</p>
+            </div>
+          </div>
+
+          {/* Zaoszczędzone zł i CO₂ */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="karta text-center">
+              <p className="text-xs font-semibold text-grafit-400 uppercase tracking-wide mb-1">Zaoszczędzone</p>
+              <p className="font-display text-2xl font-semibold text-limonka-400">
+                {data.zl_zaoszczedzone.toLocaleString('pl-PL', { maximumFractionDigits: 0 })}
+              </p>
+              <p className="text-xs text-grafit-400 mt-0.5">zł</p>
+            </div>
+            <div className="karta text-center">
+              <p className="text-xs font-semibold text-grafit-400 uppercase tracking-wide mb-1">CO₂ uniknięte</p>
+              <p className="font-display text-2xl font-semibold text-grafit-100">
+                {data.co2_unikniete.toLocaleString('pl-PL', { maximumFractionDigits: 1 })}
+              </p>
+              <p className="text-xs text-grafit-400 mt-0.5">kg ekw.</p>
+            </div>
+          </div>
+
+          {/* Wykres tygodniowy */}
           <div className="karta">
             <h2 className="font-semibold text-grafit-100 mb-4">Ostatnie 7 dni (kg)</h2>
             <ResponsiveContainer width="100%" height={200}>
@@ -98,7 +146,7 @@ export default function Dashboard() {
                     name === 'uratowane' ? 'Uratowane' : 'Zmarnowane',
                   ]}
                 />
-                <Legend formatter={(val) => (val === 'uratowane' ? 'Uratowane' : 'Zmarnowane')}
+                <Legend formatter={(val) => (val === 'uratowane' ? 'Uratowane (zjedzone + oddane)' : 'Zmarnowane')}
                   wrapperStyle={{ fontSize: '12px', color: '#9a9b8c' }} />
                 <Bar dataKey="uratowane" fill="#aee63a" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="zmarnowane" fill="#f87171" radius={[3, 3, 0, 0]} />
@@ -114,7 +162,7 @@ export default function Dashboard() {
               (ok. <span className="text-grafit-100 font-semibold">800-1000 zł</span>).
             </p>
             <p className="text-xs text-grafit-500 mt-2">
-              Źródło: Krajowy Plan Gospodarki Odpadami 2022--2028
+              Źródło: Krajowy Plan Gospodarki Odpadami 2022-2028
             </p>
           </div>
         </>
