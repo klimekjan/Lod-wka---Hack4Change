@@ -36,8 +36,8 @@ export default function StronaGlowna() {
           : 'bg-transparent'
       }`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="font-bold text-white text-lg tracking-tight">Eat Me App</span>
+          <div className="flex items-center">
+            <img src="/logo.png" alt="EatMeApp" className="h-9 w-auto" />
           </div>
           <div className="flex items-center gap-3">
             <Link to="/logowanie" className="btn-secondary text-sm py-1.5 px-4">
@@ -50,8 +50,8 @@ export default function StronaGlowna() {
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Hero — sticky, przykrywany przez kolejne sekcje */}
+      <section className="sticky top-0 h-screen flex items-center justify-center overflow-hidden" style={{ zIndex: 0 }}>
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url('https://images.unsplash.com/photo-1542838132-92c53300491e?w=1920&q=80&auto=format&fit=crop')` }}
@@ -61,7 +61,7 @@ export default function StronaGlowna() {
 
         <div className="relative z-10 text-center px-6 max-w-3xl mx-auto pt-16">
           <div className="animate-float mb-8 inline-block drop-shadow-2xl">
-            <Logo size={120} withText={false} />
+            <img src="/logo.png" alt="EatMeApp" className="h-36 w-auto" />
           </div>
           <h1
             className="text-5xl sm:text-7xl font-black text-white leading-tight mb-5 animate-fadeInUp"
@@ -102,8 +102,8 @@ export default function StronaGlowna() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="bg-nocny-900 py-20 px-6">
+      {/* Stats — przykrywa hero od dołu */}
+      <section className="relative bg-nocny-900 py-20 px-6" style={{ zIndex: 1 }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-red-400 mb-3">Liczby nie kłamią</p>
@@ -139,7 +139,7 @@ export default function StronaGlowna() {
       </section>
 
       {/* Problem 1 */}
-      <section className="py-20 px-6">
+      <section className="relative bg-nocny-800 py-20 px-6" style={{ zIndex: 1 }}>
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -152,7 +152,7 @@ export default function StronaGlowna() {
             <p className="text-slate-400 leading-relaxed mb-4">
               Każdego roku marnujemy 1,3 miliarda ton jedzenia. W tym samym czasie ponad
               783 miliony ludzi cierpi z powodu głodu. To nie jest tylko problem ekonomiczny
-              -- to moralne wyzwanie naszych czasów.
+              -to moralne wyzwanie naszych czasów.
             </p>
             <p className="text-slate-400 leading-relaxed">
               Przeciętne polskie gospodarstwo domowe wyrzuca rocznie około 247 kg jedzenia
@@ -172,7 +172,7 @@ export default function StronaGlowna() {
       </section>
 
       {/* Problem 2 */}
-      <section className="py-20 px-6 bg-nocny-900">
+      <section className="relative bg-nocny-900 py-20 px-6" style={{ zIndex: 1 }}>
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-2xl order-2 md:order-1">
             <img
@@ -191,20 +191,20 @@ export default function StronaGlowna() {
               Bezpośredni wpływ<br />na zmiany klimatu
             </h2>
             <p className="text-slate-400 leading-relaxed mb-4">
-              Kiedy jedzenie trafia na wysypisko, rozkłada się i wydziela metan -- gaz o 80 razy
+              Kiedy jedzenie trafia na wysypisko, rozkłada się i wydziela metan -gaz o 80 razy
               silniejszym efekcie cieplarnianym niż CO₂. Gdyby marnotrawstwo żywności było
               krajem, byłoby trzecim największym emitentem gazów cieplarnianych na świecie.
             </p>
             <p className="text-slate-400 leading-relaxed">
               Każdy kilogram uratowanego jedzenia to realny wkład w walkę ze zmianami klimatu.
-              Eat Me App mierzy ten wpływ i pokazuje go w liczbach które mają znaczenie.
+              EatMeApp mierzy ten wpływ i pokazuje go w liczbach które mają znaczenie.
             </p>
           </div>
         </div>
       </section>
 
       {/* Features */}
-      <section className="py-20 px-6">
+      <section className="relative bg-nocny-800 py-20 px-6" style={{ zIndex: 1 }}>
         <div className="max-w-5xl mx-auto">
           <div className="mb-12">
             <div className="flex items-center gap-3 mb-4">
@@ -218,7 +218,7 @@ export default function StronaGlowna() {
 
           {/* bento grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {/* wide image tile -- spiżarnia photo */}
+            {/* wide image tile -spiżarnia photo */}
             <div className="col-span-2 sm:col-span-2 row-span-1 relative rounded-2xl overflow-hidden min-h-[180px]">
               <img
                 src="https://plus.unsplash.com/premium_photo-1663126472261-6e58ab83bfea?w=1200&q=80&auto=format&fit=crop"
@@ -278,7 +278,7 @@ export default function StronaGlowna() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-24 px-6 bg-nocny-900 relative overflow-hidden">
+      <section className="relative bg-nocny-900 py-24 px-6 overflow-hidden" style={{ zIndex: 1 }}>
         <div className="absolute inset-0 pointer-events-none select-none flex items-center justify-end pr-12 opacity-[0.04]">
           <Logo size={420} withText={false} />
         </div>
@@ -312,8 +312,8 @@ export default function StronaGlowna() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 text-center border-t border-nocny-700">
-        <p className="text-nocny-400 text-sm">Eat Me App -- Hack4Change Gdańsk 2026</p>
+      <footer className="relative bg-nocny-800 py-8 text-center border-t border-nocny-700" style={{ zIndex: 1 }}>
+        <p className="text-nocny-400 text-sm">EatMeApp -Hack4Change Gdańsk 2026</p>
       </footer>
 
     </div>

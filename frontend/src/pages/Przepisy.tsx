@@ -70,7 +70,7 @@ function KartaPrzepisu({ przepis, onUgotowane }: { przepis: Przepis; onUgotowane
 
       {!ugotowany ? (
         <button className="btn text-sm w-full" onClick={() => { setUgotowany(true); onUgotowane() }}>
-          Ugotowane -- oznacz składniki jako zjedzone
+          Ugotowane - oznacz składniki jako zjedzone
         </button>
       ) : (
         <p className="text-sm text-zielony-400 text-center font-medium">Zapisano!</p>

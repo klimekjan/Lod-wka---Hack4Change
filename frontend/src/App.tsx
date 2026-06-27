@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ThemeProvider } from './lib/theme'
 import Logowanie from './pages/Logowanie'
 import Rejestracja from './pages/Rejestracja'
@@ -28,10 +28,11 @@ function HomeRoute() {
 }
 
 function AppLayout({ children }: { children: React.ReactNode }) {
+  const location = useLocation()
   return (
     <div className="min-h-screen flex flex-col bg-grafit-850 app-shell">
       <Navbar />
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-6">{children}</main>
+      <main key={location.key} className="page-enter flex-1 max-w-2xl w-full mx-auto px-4 py-6">{children}</main>
     </div>
   )
 }
