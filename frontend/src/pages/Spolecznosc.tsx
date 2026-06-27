@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { spolecznosc, auth, Ogloszenie } from '../lib/api'
+import { spolecznosc, auth, spizarnia, Ogloszenie } from '../lib/api'
 import MapaWymiany from '../components/MapaWymiany'
 
 const JEDNOSTKI = ['szt.', 'kg', 'g', 'l', 'ml', 'opak.']
@@ -90,8 +90,14 @@ export default function Spolecznosc() {
   const [form, setForm] = useState<FormState>(defaultForm)
   const [zakładka, setZakładka] = useState<'dostepne' | 'moje'>('dostepne')
   const [widok, setWidok] = useState<'lista' | 'mapa'>('lista')
+  const [popupSpizarnia, setPopupSpizarnia] = useState(false)
 
   const { data: user } = useQuery({ queryKey: ['user'], queryFn: () => auth.mnie().then(r => r.data) })
+  const { data: mojaSpizarnia = [] } = useQuery({
+    queryKey: ['spizarnia'],
+    queryFn: () => spizarnia.lista().then(r => r.data),
+    enabled: formularzOtwarty,
+  })
   const { data: ogłoszenia = [], isLoading } = useQuery({
     queryKey: ['spolecznosc', filtrMiasto],
     queryFn: () => spolecznosc.lista(filtrMiasto || undefined).then(r => r.data),
@@ -150,9 +156,55 @@ export default function Spolecznosc() {
         <form onSubmit={submit} className="karta space-y-3">
           <h2 className="font-semibold text-grafit-100">Nowe ogłoszenie</h2>
           <p className="text-xs text-grafit-400">Produkt pojawi się na mapie pod adresem: {user.adres}</p>
-          <div>
-            <label className="block text-sm font-medium text-grafit-300 mb-1">Produkt</label>
-            <input className="input" value={form.item_name} onChange={e => setField('item_name', e.target.value)} required placeholder="np. Jabłka z ogrodu" autoFocus />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-grafit-300">Produkt</label>
+              {mojaSpizarnia.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setPopupSpizarnia(v => !v)}
+                  className="text-xs text-limonka-400 hover:text-limonka-300 font-medium"
+                >
+                  Ze spiżarni {popupSpizarnia ? '▲' : '▼'}
+                </button>
+              )}
+            </div>
+            <input
+              className="input"
+              value={form.item_name}
+              onChange={e => setField('item_name', e.target.value)}
+              required
+              placeholder="np. Jabłka z ogrodu"
+              autoFocus
+            />
+            {popupSpizarnia && (
+              <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-grafit-600 bg-grafit-850 shadow-xl max-h-52 overflow-y-auto">
+                {mojaSpizarnia.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setForm(f => ({ ...f, item_name: p.name, quantity: String(p.quantity), unit: p.unit }))
+                      setPopupSpizarnia(false)
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-grafit-700 transition-colors text-left"
+                  >
+                    {p.image_url ? (
+                      <img src={p.image_url} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 bg-grafit-700" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg shrink-0 bg-grafit-600 flex items-center justify-center text-sm">🥫</div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-grafit-100 truncate">{p.name}</p>
+                      <p className="text-xs text-grafit-400">{p.quantity} {p.unit} · {p.category}</p>
+                    </div>
+                    {p.days_left !== null && p.days_left !== undefined && p.days_left <= 5 && (
+                      <span className="text-xs text-bursztyn-400 shrink-0">za {p.days_left}d</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
