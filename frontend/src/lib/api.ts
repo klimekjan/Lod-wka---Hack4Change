@@ -165,6 +165,7 @@ export const spizarnia = {
   usun: (id: number) => api.delete(`/spizarnia/${id}`),
   skanuj: (barcode: string) => api.get<{ found: boolean; name?: string; category?: string; image_url?: string; default_shelf_days?: number }>(`/produkty/barcode/${barcode}`),
   szukaj: (q: string) => api.get<{ found: boolean; name?: string; category?: string; image_url?: string; default_shelf_days?: number }>('/produkty/szukaj', { params: { q } }),
+  kategoria: (nazwa: string) => api.get<{ kategoria: string; pewnosc: number }>('/produkty/kategoria', { params: { nazwa } }),
 }
 
 // Powiadomienia

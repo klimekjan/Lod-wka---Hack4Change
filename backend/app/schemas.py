@@ -136,12 +136,18 @@ class SugestiaProduktu(BaseModel):
     default_shelf_days: Optional[int] = None
 
 
+class KategoriaResponse(BaseModel):
+    kategoria: str
+    pewnosc: float
+
+
 # --- Dashboard ---
 
 class DashboardStats(BaseModel):
     kg_uratowane: float
     kg_zmarnowane: float
     kg_oddane: float
+    zl_zaoszczedzone: float
     co2_unikniete: float
     streak_dni: int
     wskaznik_uratowania: float

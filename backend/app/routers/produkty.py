@@ -6,12 +6,22 @@ from sqlmodel import Session, select
 from ..auth import get_current_user
 from ..db import get_session
 from ..models import User, ProductCache
-from ..schemas import BarcodeLookupResponse, SugestiaProduktu
+from ..schemas import BarcodeLookupResponse, SugestiaProduktu, KategoriaResponse
+from ..services.ml.classify import klasyfikuj
 from ..services.openfoodfacts import lookup_barcode, search_by_name, search_suggestions_es
 from ..services.local_products import szukaj_lokalnie
 from ..services.shelflife import domyslne_dni
 
 router = APIRouter(prefix="/api/produkty", tags=["produkty"])
+
+
+@router.get("/kategoria", response_model=KategoriaResponse)
+async def klasyfikuj_kategorie(
+    nazwa: str,
+    current_user: User = Depends(get_current_user),
+):
+    kategoria, pewnosc = klasyfikuj(nazwa)
+    return KategoriaResponse(kategoria=kategoria, pewnosc=pewnosc)
 
 
 @router.get("/sugestie", response_model=List[SugestiaProduktu])
@@ -75,11 +85,17 @@ async def szukaj_produkt(
     if not result or not result.get("name"):
         return BarcodeLookupResponse(found=False)
 
-    shelf_days = domyslne_dni(result["category"])
+    cat = result["category"]
+    if cat == "inne" and result.get("name"):
+        clf_kat, _ = klasyfikuj(result["name"])
+        if clf_kat != "inne":
+            cat = clf_kat
+
+    shelf_days = domyslne_dni(cat)
     return BarcodeLookupResponse(
         found=True,
         name=result["name"],
-        category=result["category"],
+        category=cat,
         image_url=result.get("image_url"),
         default_shelf_days=shelf_days,
     )
@@ -95,11 +111,17 @@ async def skanuj_barcode(
     if not result or not result.get("name"):
         return BarcodeLookupResponse(found=False)
 
-    shelf_days = domyslne_dni(result["category"])
+    cat = result["category"]
+    if cat == "inne" and result.get("name"):
+        clf_kat, _ = klasyfikuj(result["name"])
+        if clf_kat != "inne":
+            cat = clf_kat
+
+    shelf_days = domyslne_dni(cat)
     return BarcodeLookupResponse(
         found=True,
         name=result["name"],
-        category=result["category"],
+        category=cat,
         image_url=result.get("image_url"),
         default_shelf_days=shelf_days,
     )

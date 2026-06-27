@@ -1,12 +1,12 @@
 kategoria,dni_lodowka,dni_zamrazarka,dni_szafka
-nabiał,7,180,0
-mięso surowe,3,180,0
-ryby,2,90,0
-warzywa liściaste,5,365,0
-warzywa twarde,14,365,60
-owoce,7,365,30
-pieczywo,5,90,60
-jajka,21,365,0
-napoje,7,180,180
-przetwory,3650,3650,3650
-inne,7,180,30
+nabiał,10,180,0
+mięso surowe,3,120,0
+ryby,3,90,0
+warzywa liściaste,5,12,0
+warzywa twarde,12,90,10
+owoce,10,180,5
+pieczywo,5,60,5
+jajka,28,180,21
+napoje,5,180,90
+przetwory,30,365,365
+inne,7,90,14

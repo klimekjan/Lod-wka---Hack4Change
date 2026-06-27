@@ -74,6 +74,51 @@ const KATEGORIE = [
 ]
 const JEDNOSTKI = ['szt.', 'kg', 'g', 'l', 'ml', 'opak.']
 
+const SHELF_LIFE: Record<string, { lodowka: number; zamrazarka: number }> = {
+  'nabiał':            { lodowka: 10,  zamrazarka: 180 },
+  'mięso surowe':      { lodowka: 3,   zamrazarka: 120 },
+  'ryby':              { lodowka: 3,   zamrazarka: 90  },
+  'warzywa liściaste': { lodowka: 5,   zamrazarka: 12  },
+  'warzywa twarde':    { lodowka: 12,  zamrazarka: 90  },
+  'owoce':             { lodowka: 10,  zamrazarka: 180 },
+  'pieczywo':          { lodowka: 5,   zamrazarka: 60  },
+  'jajka':             { lodowka: 28,  zamrazarka: 180 },
+  'napoje':            { lodowka: 5,   zamrazarka: 180 },
+  'przetwory':         { lodowka: 30,  zamrazarka: 365 },
+  'inne':              { lodowka: 7,   zamrazarka: 90  },
+}
+
+function obliczDateWaznosci(kategoria: string, frozen: boolean): string {
+  const sl = SHELF_LIFE[kategoria] ?? SHELF_LIFE['inne']
+  const dni = frozen ? sl.zamrazarka : sl.lodowka
+  const d = new Date()
+  d.setDate(d.getDate() + dni)
+  return d.toISOString().slice(0, 10)
+}
+
+const _WAGA_SZT: Record<string, number> = {
+  'nabiał': 0.15, 'mięso surowe': 0.20, 'ryby': 0.15, 'warzywa liściaste': 0.12,
+  'warzywa twarde': 0.15, 'owoce': 0.15, 'pieczywo': 0.08, 'jajka': 0.06,
+  'napoje': 0.33, 'przetwory': 0.35, 'inne': 0.15,
+}
+const _WAGA_OPAK: Record<string, number> = {
+  'nabiał': 0.50, 'mięso surowe': 0.35, 'ryby': 0.25, 'warzywa liściaste': 0.20,
+  'warzywa twarde': 0.40, 'owoce': 0.50, 'pieczywo': 0.45, 'jajka': 0.60,
+  'napoje': 0.75, 'przetwory': 0.40, 'inne': 0.30,
+}
+
+function szacujKgFrontend(quantity: number, unit: string, category: string): number {
+  const u = unit.trim().toLowerCase()
+  if (u === 'kg')   return quantity
+  if (u === 'g')    return quantity * 0.001
+  if (u === 'dag')  return quantity * 0.01
+  if (u === 'l')    return quantity
+  if (u === 'ml')   return quantity * 0.001
+  if (u === 'szt.') return quantity * (_WAGA_SZT[category] ?? 0.15)
+  if (u === 'opak.') return quantity * (_WAGA_OPAK[category] ?? 0.30)
+  return quantity * 0.15
+}
+
 function kolorDaty(dniDo?: number | null): string {
   if (dniDo === undefined || dniDo === null) return 'bg-grafit-700/80 text-grafit-100'
   if (dniDo < 0)   return 'bg-red-600/80 text-white'
@@ -106,7 +151,27 @@ function KafelekProduktu({
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [weightInput, setWeightInput] = useState('')
 
-  const szacunek = szacujKg(produkt.quantity, produkt.unit, produkt.category)
+  function wybierzAkcje(action: string) {
+    setPendingAction(action)
+    setWeightInput('')
+  }
+
+  function potwierdz() {
+    if (!pendingAction) return
+    const kg = parseFloat(weightInput)
+    onAkcja(pendingAction, isNaN(kg) || kg <= 0 ? undefined : kg)
+    setPendingAction(null)
+    setOtwarty(false)
+  }
+
+  function pomin() {
+    if (!pendingAction) return
+    onAkcja(pendingAction)
+    setPendingAction(null)
+    setOtwarty(false)
+  }
+
+  const szacunek = szacujKgFrontend(produkt.quantity, produkt.unit, produkt.category)
 
   function handleClick() {
     if (trybWyboru) {
