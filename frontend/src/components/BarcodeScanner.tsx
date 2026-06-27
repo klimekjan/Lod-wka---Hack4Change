@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, FormEvent } from 'react'
 import 'barcode-detector/side-effects' // polyfill dla Firefox (WASM ZXing)
 
 interface Props {
   onScan: (barcode: string) => void
+  onSearch: (query: string) => void
   onClose: () => void
 }
 
@@ -16,15 +17,25 @@ function PanelLadowania() {
 
 type Wykrycie = 'brak' | 'wykryto' | 'dekoduje'
 
-export default function BarcodeScanner({ onScan, onClose }: Props) {
+export default function BarcodeScanner({ onScan, onSearch, onClose }: Props) {
   const [stan, setStan] = useState<'czeka' | 'dziala' | 'blad'>('czeka')
   const [bladTekst, setBladTekst] = useState('')
   const [wykrycie, setWykrycie] = useState<Wykrycie>('brak')
   const [ladowanie, setLadowanie] = useState(false)
+  const [reczneOtwarte, setReczneOtwarte] = useState(false)
+  const [reczneQuery, setReczneQuery] = useState('')
   const videoRef = useRef<HTMLVideoElement>(null)
   const scannedRef = useRef(false)
   const onScanRef = useRef(onScan)
   useEffect(() => { onScanRef.current = onScan }, [onScan])
+
+  function submitReczne(e: FormEvent) {
+    e.preventDefault()
+    const q = reczneQuery.trim()
+    if (!q) return
+    setLadowanie(true)
+    onSearch(q)
+  }
 
   useEffect(() => {
     let stream: MediaStream | null = null
@@ -153,6 +164,35 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
             </div>
           </div>
         )}
+
+        <div className="px-4 pb-4 pt-2 border-t border-slate-100">
+          {!reczneOtwarte ? (
+            <button
+              className="text-slate-400 text-sm hover:text-slate-600 transition-colors"
+              onClick={() => setReczneOtwarte(true)}
+            >
+              Wpisz ręcznie
+            </button>
+          ) : (
+            <form onSubmit={submitReczne} className="flex gap-2 items-center">
+              <input
+                className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                placeholder="Kod EAN lub nazwa produktu..."
+                value={reczneQuery}
+                onChange={e => setReczneQuery(e.target.value)}
+                autoFocus
+                disabled={ladowanie}
+              />
+              <button
+                type="submit"
+                disabled={!reczneQuery.trim() || ladowanie}
+                className="px-3 py-2 rounded-lg bg-slate-800 text-white text-sm font-medium disabled:opacity-40 hover:bg-slate-700 transition-colors shrink-0"
+              >
+                {ladowanie ? '...' : 'Szukaj'}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )

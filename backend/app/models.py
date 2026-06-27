@@ -38,6 +38,7 @@ class PantryItem(SQLModel, table=True):
     expires_at: Optional[datetime] = None
     # active | eaten | wasted | shared
     status: str = "active"
+    event_id: Optional[int] = Field(default=None, foreign_key="events.id", index=True)
 
 
 class ConsumptionLog(SQLModel, table=True):
@@ -116,6 +117,32 @@ class RecipeCache(SQLModel, table=True):
     user_id: int = Field(foreign_key="users.id", unique=True, index=True)
     recipes_json: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Event(SQLModel, table=True):
+    __tablename__ = "events"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organizer_id: int = Field(foreign_key="users.id", index=True)
+    name: str
+    description: Optional[str] = None
+    address: str
+    city: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    event_at: datetime
+    # active | cancelled | completed
+    status: str = "active"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class EventParticipant(SQLModel, table=True):
+    __tablename__ = "event_participants"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    event_id: int = Field(foreign_key="events.id", index=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    joined_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class Notification(SQLModel, table=True):

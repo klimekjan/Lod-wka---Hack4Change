@@ -23,6 +23,7 @@ _MIGRACJE = {
         ("nick", "TEXT"),
     ],
     "share_listings": [("address", "TEXT"), ("lat", "FLOAT"), ("lon", "FLOAT")],
+    "pantry_items": [("event_id", "INTEGER")],
 }
 
 

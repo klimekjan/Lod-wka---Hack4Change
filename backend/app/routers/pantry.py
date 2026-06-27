@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 
 from ..auth import get_current_user
 from ..db import get_session
-from ..models import ConsumptionLog, PantryItem, ShareListing, User
+from ..models import ConsumptionLog, Event, PantryItem, ShareListing, User
 from ..schemas import (
     AkcjaProduktRequest,
     AktualizujProduktRequest,
@@ -51,7 +51,16 @@ def lista_produktow(
         query = query.where(PantryItem.status == status)
     items = session.exec(query).all()
     result = [_to_response(item) for item in items]
-    # Sortuj: najpierw wg ryzyka (malejąco), potem wg dni do końca
+
+    event_ids = {r.event_id for r in result if r.event_id is not None}
+    events_map: dict[int, str] = {}
+    if event_ids:
+        for e in session.exec(select(Event).where(Event.id.in_(event_ids))).all():
+            events_map[e.id] = e.name
+    for r in result:
+        if r.event_id is not None:
+            r.event_name = events_map.get(r.event_id)
+
     result.sort(
         key=lambda x: (
             x.days_left is None,

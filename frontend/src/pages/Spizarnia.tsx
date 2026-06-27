@@ -1,8 +1,8 @@
-import { useState, FormEvent, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, FormEvent, useCallback, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
-import { spizarnia, Produkt } from '../lib/api'
+import { spizarnia, wydarzenia as wydarzeniaApi, Produkt } from '../lib/api'
 import BarcodeScanner from '../components/BarcodeScanner'
 
 const KATEGORIE = [
@@ -29,16 +29,32 @@ function formatData(expiresAt?: string | null): string {
 function KafelekProduktu({
   produkt,
   onAkcja,
+  trybWyboru = false,
+  zaznaczony = false,
+  onToggle,
 }: {
   produkt: Produkt
   onAkcja: (action: string) => void
+  trybWyboru?: boolean
+  zaznaczony?: boolean
+  onToggle?: () => void
 }) {
   const [otwarty, setOtwarty] = useState(false)
 
+  function handleClick() {
+    if (trybWyboru) {
+      onToggle?.()
+    } else {
+      setOtwarty(o => !o)
+    }
+  }
+
   return (
     <div
-      className="relative aspect-square rounded-xl overflow-hidden cursor-pointer select-none bg-grafit-700"
-      onClick={() => setOtwarty(o => !o)}
+      className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer select-none bg-grafit-700 transition-all ${
+        trybWyboru && zaznaczony ? 'ring-2 ring-limonka-400' : ''
+      } ${trybWyboru && !zaznaczony ? 'opacity-60' : ''}`}
+      onClick={handleClick}
     >
       {produkt.image_url ? (
         <img
@@ -48,9 +64,7 @@ function KafelekProduktu({
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-4xl text-grafit-500">
-          🥫
-        </div>
+        <div className="w-full h-full bg-grafit-700" />
       )}
 
       {produkt.expires_at && (
@@ -65,9 +79,22 @@ function KafelekProduktu({
 
       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-2 pt-4 pb-1.5">
         <p className="text-white text-xs font-medium truncate leading-tight">{produkt.name}</p>
+        {!trybWyboru && produkt.event_name && (
+          <p className="text-[9px] font-medium truncate" style={{ color: '#c084fc' }}>
+            → {produkt.event_name}
+          </p>
+        )}
       </div>
 
-      {otwarty && (
+      {trybWyboru && zaznaczony && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-8 h-8 rounded-full bg-limonka-400 flex items-center justify-center shadow-lg">
+            <span className="text-grafit-900 font-bold text-lg leading-none">✓</span>
+          </div>
+        </div>
+      )}
+
+      {!trybWyboru && otwarty && (
         <div
           className="absolute inset-0 bg-black/65 flex flex-col items-center justify-center gap-2 p-2"
           onClick={e => e.stopPropagation()}
@@ -121,18 +148,36 @@ const defaultForm: FormState = {
 }
 
 export default function Spizarnia() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [searchParams] = useSearchParams()
+  const wydarzenieIdParam = searchParams.get('wydarzenie')
+  const wydarzenieId = wydarzenieIdParam ? parseInt(wydarzenieIdParam, 10) : null
+
   const [formularzOtwarty, setFormularzOtwarty] = useState(false)
   const [skanerOtwarty, setSkanerOtwarty] = useState(false)
   const [form, setForm] = useState<FormState>(defaultForm)
   const [skanBlad, setSkanBlad] = useState('')
   const [akcjaOk, setAkcjaOk] = useState('')
   const [brakAdresu, setBrakAdresu] = useState(false)
+  const [zaznaczone, setZaznaczone] = useState<Set<number>>(new Set())
 
   const { data: produkty = [], isLoading, error } = useQuery({
     queryKey: ['spizarnia'],
     queryFn: () => spizarnia.lista().then(r => r.data),
   })
+
+  const { data: wydarzenieSzczegoly } = useQuery({
+    queryKey: ['wydarzenie', wydarzenieId],
+    queryFn: () => wydarzeniaApi.szczegoly(wydarzenieId!).then(r => r.data),
+    enabled: wydarzenieId !== null,
+  })
+
+  useEffect(() => {
+    if (wydarzenieId !== null && produkty.length > 0) {
+      setZaznaczone(new Set(produkty.filter(p => p.event_id === wydarzenieId).map(p => p.id)))
+    }
+  }, [wydarzenieId, produkty])
 
   const mutacjaDodaj = useMutation({
     mutationFn: (dane: Partial<Produkt>) => spizarnia.dodaj(dane).then(r => r.data),
@@ -161,14 +206,24 @@ export default function Spizarnia() {
     },
   })
 
-  const handleScan = useCallback(async (barcode: string) => {
+  const mutacjaPrzekazProdukty = useMutation({
+    mutationFn: ({ id, ids }: { id: number; ids: number[] }) =>
+      wydarzeniaApi.przekazProdukty(id, ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
+      queryClient.invalidateQueries({ queryKey: ['wydarzenie', wydarzenieId] })
+      navigate('/spolecznosc')
+    },
+  })
+
+  async function _wypełnijFormularz(pobierz: () => ReturnType<typeof spizarnia.skanuj>, etykieta: string) {
     setSkanBlad('')
     try {
-      const res = await spizarnia.skanuj(barcode)
+      const res = await pobierz()
       const d = res.data
       if (!d.found || !d.name) {
         setSkanerOtwarty(false)
-        setSkanBlad(`Kod ${barcode} nie znaleziony w bazie. Wpisz ręcznie.`)
+        setSkanBlad(`${etykieta} nie znaleziony w bazie.`)
         setFormularzOtwarty(true)
         setForm(f => ({ ...f, name: '' }))
         return
@@ -188,9 +243,17 @@ export default function Spizarnia() {
       setFormularzOtwarty(true)
     } catch {
       setSkanerOtwarty(false)
-      setSkanBlad('Błąd połączenia podczas skanowania.')
+      setSkanBlad('Błąd połączenia.')
       setFormularzOtwarty(true)
     }
+  }
+
+  const handleScan = useCallback((barcode: string) => {
+    _wypełnijFormularz(() => spizarnia.skanuj(barcode), `Kod ${barcode}`)
+  }, [])
+
+  const handleSearch = useCallback((query: string) => {
+    _wypełnijFormularz(() => spizarnia.szukaj(query), `"${query}"`)
   }, [])
 
   function submit(e: FormEvent) {
@@ -209,33 +272,85 @@ export default function Spizarnia() {
     setForm(f => ({ ...f, [key]: val }))
   }
 
+  function toggleZaznaczenie(id: number) {
+    setZaznaczone(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function zatwierdzWybor() {
+    if (wydarzenieId === null) return
+    mutacjaPrzekazProdukty.mutate({ id: wydarzenieId, ids: [...zaznaczone] })
+  }
+
   const przeterminowane = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left < 0)
   const naWylocie = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left >= 0 && p.days_left <= 3)
   const swieże = produkty.filter(p => p.days_left === undefined || p.days_left === null || p.days_left > 3)
 
+  const trybWyboru = wydarzenieId !== null
+  const nazwaNazwy = wydarzenieSzczegoly?.name ?? `wydarzenie #${wydarzenieId}`
+
   return (
     <div className="space-y-4">
       {skanerOtwarty && (
-        <BarcodeScanner onScan={handleScan} onClose={() => setSkanerOtwarty(false)} />
+        <BarcodeScanner onScan={handleScan} onSearch={handleSearch} onClose={() => setSkanerOtwarty(false)} />
       )}
 
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold text-grafit-100">Spiżarnia</h1>
-        <div className="flex gap-2">
-          <button
-            className="btn-ghost text-sm"
-            onClick={() => { setSkanBlad(''); setSkanerOtwarty(true) }}
-          >
-            Skanuj
-          </button>
-          <button
-            className="btn text-sm"
-            onClick={() => { setForm(defaultForm); setSkanBlad(''); setFormularzOtwarty(f => !f) }}
-          >
-            {formularzOtwarty ? 'Anuluj' : '+ Dodaj'}
-          </button>
+      {trybWyboru && (
+        <div className="rounded-xl px-4 py-3 space-y-2" style={{ background: '#9333ea22', border: '1px solid #9333ea55' }}>
+          <p className="font-semibold" style={{ color: '#c084fc' }}>
+            Wybierz produkty na: {nazwaNazwy}
+          </p>
+          <p className="text-xs text-grafit-400">
+            Kliknij kafelki żeby zaznaczyć/odznaczyć. Zaznaczono: {zaznaczone.size}.
+          </p>
+          <div className="flex gap-2">
+            <button
+              className="btn text-sm py-1.5"
+              style={{ background: '#9333ea' }}
+              onClick={zatwierdzWybor}
+              disabled={mutacjaPrzekazProdukty.isPending}
+            >
+              {mutacjaPrzekazProdukty.isPending ? 'Zapisuję...' : `Zatwierdź (${zaznaczone.size})`}
+            </button>
+            <button
+              className="btn-ghost text-sm py-1.5"
+              onClick={() => navigate('/spolecznosc')}
+            >
+              Anuluj
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {!trybWyboru && (
+        <div className="flex items-center justify-between">
+          <h1 className="font-display text-2xl font-semibold text-grafit-100">Spiżarnia</h1>
+          <div className="flex gap-2">
+            <button
+              className="btn-ghost text-sm"
+              onClick={() => { setSkanBlad(''); setSkanerOtwarty(true) }}
+            >
+              Skanuj
+            </button>
+            <button
+              className="btn text-sm"
+              onClick={() => { setForm(defaultForm); setSkanBlad(''); setFormularzOtwarty(f => !f) }}
+            >
+              {formularzOtwarty ? 'Anuluj' : '+ Dodaj'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {trybWyboru && (
+        <div className="flex items-center justify-between">
+          <h1 className="font-display text-2xl font-semibold text-grafit-100">Spiżarnia</h1>
+        </div>
+      )}
 
       {skanBlad && (
         <div className="bg-bursztyn-500/10 border border-bursztyn-500/40 text-bursztyn-400 text-sm px-3 py-2 rounded-lg">
@@ -258,7 +373,7 @@ export default function Spizarnia() {
         </div>
       )}
 
-      {formularzOtwarty && (
+      {!trybWyboru && formularzOtwarty && (
         <form onSubmit={submit} className="karta space-y-3">
           {!form.imageUrl && (
             <h2 className="font-semibold text-grafit-100">Nowy produkt</h2>
@@ -362,6 +477,9 @@ export default function Spizarnia() {
                 key={p.id}
                 produkt={p}
                 onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
+                trybWyboru={trybWyboru}
+                zaznaczony={zaznaczone.has(p.id)}
+                onToggle={() => toggleZaznaczenie(p.id)}
               />
             ))}
           </div>
@@ -379,6 +497,9 @@ export default function Spizarnia() {
                 key={p.id}
                 produkt={p}
                 onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
+                trybWyboru={trybWyboru}
+                zaznaczony={zaznaczone.has(p.id)}
+                onToggle={() => toggleZaznaczenie(p.id)}
               />
             ))}
           </div>
@@ -396,6 +517,9 @@ export default function Spizarnia() {
                 key={p.id}
                 produkt={p}
                 onAkcja={action => mutacjaAkcja.mutate({ id: p.id, action })}
+                trybWyboru={trybWyboru}
+                zaznaczony={zaznaczone.has(p.id)}
+                onToggle={() => toggleZaznaczenie(p.id)}
               />
             ))}
           </div>

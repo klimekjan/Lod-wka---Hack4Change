@@ -7,6 +7,7 @@ from sqlmodel import Session
 from ..models import ProductCache
 
 OFF_URL = "https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
+OFF_SEARCH_URL = "https://world.openfoodfacts.org/api/v2/search"
 
 KATEGORIE_MAP = {
     "dairy": "nabiał",
@@ -87,4 +88,34 @@ async def lookup_barcode(barcode: str, session: Session) -> dict | None:
     ))
     session.commit()
 
+    return {"name": name, "category": category, "image_url": image_url}
+
+
+async def search_by_name(query: str) -> dict | None:
+    try:
+        async with httpx.AsyncClient(timeout=6.0) as client:
+            resp = await client.get(OFF_SEARCH_URL, params={
+                "search_terms": query,
+                "page_size": 1,
+                "fields": "product_name,product_name_pl,categories_tags,image_front_small_url,image_url",
+            })
+            data = resp.json()
+    except Exception:
+        return None
+
+    products = data.get("products", [])
+    if not products:
+        return None
+
+    product = products[0]
+    name = (
+        product.get("product_name_pl")
+        or product.get("product_name")
+        or ""
+    ).strip()
+    if not name:
+        return None
+
+    category = _mapuj_kategorie(product.get("categories_tags", []))
+    image_url = product.get("image_front_small_url") or product.get("image_url")
     return {"name": name, "category": category, "image_url": image_url}
