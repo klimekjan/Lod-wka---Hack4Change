@@ -60,14 +60,8 @@ export default function StronaGlowna() {
         <div className="absolute inset-0 bg-gradient-to-b from-nocny-900/60 via-transparent to-nocny-800" />
 
         <div className="relative z-10 text-center px-6 max-w-3xl mx-auto pt-16">
-          <div className="animate-float mb-8 inline-block relative">
-            <img
-              src="/brush.png"
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] pointer-events-none select-none"
-            />
-            <Logo size={120} withText={false} className="relative z-10" />
+          <div className="animate-float mb-8 inline-block drop-shadow-2xl">
+            <Logo size={120} withText={false} />
           </div>
           <h1
             className="text-5xl sm:text-7xl font-black text-white leading-tight mb-5 animate-fadeInUp"
