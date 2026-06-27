@@ -1,6 +1,3 @@
-import secrets
-
-from email_validator import EmailNotValidError, validate_email
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
@@ -11,19 +8,12 @@ from ..models import User
 from ..auth import hash_password, verify_password, create_access_token, get_current_user
 from ..schemas import RejestrujRequest, TokenResponse, UserResponse, UstawieniaRequest
 from ..services.geocoding import geokoduj_szczegolowo
-from ..services.notifications import wyslij_weryfikacje_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/rejestruj", response_model=TokenResponse, status_code=201)
 def rejestruj(dane: RejestrujRequest, session: Session = Depends(get_session)):
-    # Sprawdzenie MX — czy domena może odbierać maile
-    try:
-        validate_email(dane.email, check_deliverability=True)
-    except EmailNotValidError:
-        raise HTTPException(status_code=400, detail="Adres email jest nieprawidłowy lub domena nie obsługuje poczty")
-
     if session.exec(select(User).where(User.email == dane.email)).first():
         raise HTTPException(status_code=400, detail="Nie można zarejestrować konta z podanymi danymi")
     if dane.nick and session.exec(select(User).where(User.nick == dane.nick)).first():
@@ -35,7 +25,6 @@ def rejestruj(dane: RejestrujRequest, session: Session = Depends(get_session)):
         if wynik:
             lat, lon, miasto = wynik
 
-    token = secrets.token_urlsafe(32)
     user = User(
         email=dane.email,
         password_hash=hash_password(dane.haslo),
@@ -46,41 +35,11 @@ def rejestruj(dane: RejestrujRequest, session: Session = Depends(get_session)):
         address=dane.adres,
         lat=lat,
         lon=lon,
-        email_verified=False,
-        verification_token=token,
     )
     session.add(user)
     session.commit()
     session.refresh(user)
-
-    # Wysyłamy asynchronicznie w tle — nie blokujemy rejestracji gdy email nie działa
-    wyslij_weryfikacje_email(user.email, token)
-
     return TokenResponse(access_token=create_access_token(user.id))
-
-
-@router.get("/weryfikuj")
-def weryfikuj_email(token: str, session: Session = Depends(get_session)):
-    user = session.exec(select(User).where(User.verification_token == token)).first()
-    if not user:
-        raise HTTPException(status_code=400, detail="Nieprawidłowy lub wygasły token weryfikacyjny")
-    user.email_verified = True
-    user.verification_token = None
-    session.add(user)
-    session.commit()
-    return {"ok": True, "message": "Email zweryfikowany pomyślnie"}
-
-
-@router.post("/wyslij-weryfikacje")
-def wyslij_ponownie(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    if current_user.email_verified:
-        raise HTTPException(status_code=400, detail="Email jest już zweryfikowany")
-    token = secrets.token_urlsafe(32)
-    current_user.verification_token = token
-    session.add(current_user)
-    session.commit()
-    wyslij_weryfikacje_email(current_user.email, token)
-    return {"ok": True}
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -158,5 +117,4 @@ def _user_to_response(user: User) -> UserResponse:
         notify_days_before=user.notify_days_before,
         notify_hour=user.notify_hour,
         created_at=user.created_at,
-        email_verified=user.email_verified,
     )

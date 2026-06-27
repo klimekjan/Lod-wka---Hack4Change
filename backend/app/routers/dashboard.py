@@ -46,21 +46,12 @@ _WAGA_OPAK: dict[str, float] = {
 
 def _szacuj_kg(quantity: float, unit: str, category: str = "inne") -> float:
     u = unit.strip().lower()
-<<<<<<< HEAD
-    if u == "kg":   return quantity
-    if u == "g":    return quantity * 0.001
-    if u == "dag":  return quantity * 0.01
-    if u == "l":    return quantity
-    if u == "ml":   return quantity * 0.001
-    if u == "szt.": return quantity * _WAGA_SZT.get(category, 0.15)
-=======
     if u == "kg":    return quantity
     if u == "g":     return quantity * 0.001
     if u == "dag":   return quantity * 0.01
     if u == "l":     return quantity
     if u == "ml":    return quantity * 0.001
     if u == "szt.":  return quantity * _WAGA_SZT.get(category, 0.15)
->>>>>>> d8b7f84c556868ea5d68b452bd37c686c5f5dad3
     if u == "opak.": return quantity * _WAGA_OPAK.get(category, 0.30)
     return quantity * 0.15
 
@@ -86,23 +77,19 @@ def pobierz_dashboard(
     def wspolczynniki(kategoria: str):
         if kategoria in impact.index:
             row = impact.loc[kategoria]
-            return float(row["co2_kg_per_kg"]), float(row["cena_pln_per_kg"])
-        return 1.0, 8.0
+            return float(row["co2_kg_per_kg"])
+        return 1.0
 
     kg_uratowane = 0.0
     kg_zmarnowane = 0.0
     kg_oddane = 0.0
-<<<<<<< HEAD
-    zl_zaoszcz = 0.0
-=======
->>>>>>> d8b7f84c556868ea5d68b452bd37c686c5f5dad3
     co2_unikniete = 0.0
     liczba_uratowan = 0
     kg_na_styk = 0.0
 
     for log in logi:
         kg = log.weight_kg if log.weight_kg else _szacuj_kg(log.quantity, log.unit, log.category)
-        co2_f, cena_f = wspolczynniki(log.category)
+        co2_f = wspolczynniki(log.category)
 
         if log.action in ("eaten", "shared"):
             kg_uratowane += kg
@@ -115,27 +102,16 @@ def pobierz_dashboard(
         elif log.action == "wasted":
             kg_zmarnowane += kg
 
-<<<<<<< HEAD
-    saved_kg = kg_uratowane
-    lost_kg = kg_zmarnowane
-    total_kg = saved_kg + lost_kg
-    wskaznik = round(100.0 * saved_kg / total_kg, 1) if total_kg > 0 else 0.0
-=======
     total_kg = kg_uratowane + kg_zmarnowane
     wskaznik = round(100.0 * kg_uratowane / total_kg, 1) if total_kg > 0 else 0.0
->>>>>>> d8b7f84c556868ea5d68b452bd37c686c5f5dad3
 
     streak = _oblicz_streak(logi)
-    tygodniowe = _dane_tygodniowe(logi, _IMPACT)
+    tygodniowe = _dane_tygodniowe(logi)
 
     return DashboardStats(
         kg_uratowane=round(kg_uratowane, 2),
         kg_zmarnowane=round(kg_zmarnowane, 2),
         kg_oddane=round(kg_oddane, 2),
-<<<<<<< HEAD
-        zl_zaoszczedzone=round(zl_zaoszcz, 2),
-=======
->>>>>>> d8b7f84c556868ea5d68b452bd37c686c5f5dad3
         co2_unikniete=round(co2_unikniete, 2),
         streak_dni=streak,
         wskaznik_uratowania=wskaznik,
@@ -160,19 +136,19 @@ def _oblicz_streak(logi: list) -> int:
     return streak
 
 
-def _dane_tygodniowe(logi: list, impact: pd.DataFrame) -> List[dict]:
+def _dane_tygodniowe(logi: list) -> List[dict]:
     dni = [(datetime.utcnow() - timedelta(days=i)).date() for i in range(6, -1, -1)]
     okno = set(dni)
 
     kubelki: dict = {d: {"uratowane": 0.0, "zmarnowane": 0.0} for d in dni}
-    for l in logi:
-        d = l.logged_at.date()
+    for log in logi:
+        d = log.logged_at.date()
         if d not in okno:
             continue
-        kg = l.weight_kg or _szacuj_kg(l.quantity, l.unit, l.category)
-        if l.action in ("eaten", "shared"):
+        kg = log.weight_kg or _szacuj_kg(log.quantity, log.unit, log.category)
+        if log.action in ("eaten", "shared"):
             kubelki[d]["uratowane"] += kg
-        elif l.action == "wasted":
+        elif log.action == "wasted":
             kubelki[d]["zmarnowane"] += kg
 
     return [

@@ -60,7 +60,6 @@ export interface User {
   notify_days_before: number
   notify_hour: number
   created_at: string
-  email_verified: boolean
 }
 
 export interface ProfilPubliczny {
@@ -125,8 +124,6 @@ export interface Ogloszenie {
 // Auth
 
 export const auth = {
-  weryfikujEmail: (token: string) => api.get<{ ok: boolean; message: string }>('/auth/weryfikuj', { params: { token } }),
-  wyslijWeryfikacje: () => api.post('/auth/wyslij-weryfikacje'),
   rejestruj: (
     email: string,
     haslo: string,

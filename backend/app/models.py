@@ -21,8 +21,6 @@ class User(SQLModel, table=True):
     notify_days_before: int = 3
     notify_hour: int = 8
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    email_verified: bool = False
-    verification_token: Optional[str] = None
 
 
 class PantryItem(SQLModel, table=True):

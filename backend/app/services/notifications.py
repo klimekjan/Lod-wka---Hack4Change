@@ -69,20 +69,6 @@ def _wyslij_email(do: str, temat: str, tresc: str) -> bool:
         return False
 
 
-def wyslij_weryfikacje_email(email: str, token: str) -> bool:
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-    link = f"{frontend_url}/weryfikuj?token={token}"
-    return _wyslij_email(
-        do=email,
-        temat="Eat Me App — potwierdź adres email",
-        tresc=(
-            f"Cześć!\n\n"
-            f"Kliknij poniższy link, aby potwierdzić swój adres email:\n{link}\n\n"
-            f"Jeśli nie zakładałeś konta w Eat Me App, zignoruj tę wiadomość."
-        ),
-    )
-
-
 def sprawdz_terminy(session: Session, tylko_godzina: Optional[int] = None) -> int:
     """Sprawdza terminy ważności i wysyła powiadomienia. Zwraca liczbę wysłanych alertów.
 

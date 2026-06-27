@@ -40,7 +40,6 @@ class UserResponse(BaseModel):
     notify_days_before: int
     notify_hour: int
     created_at: datetime
-    email_verified: bool = False
 
     class Config:
         from_attributes = True
