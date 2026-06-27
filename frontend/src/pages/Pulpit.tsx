@@ -98,7 +98,7 @@ export default function Pulpit() {
       {naWylocie.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-base font-semibold text-grafit-100">Na wylocie</h2>
+            <h2 className="font-display text-base font-semibold text-grafit-100">Zbliżające się terminy</h2>
             <Link to="/spizarnia" className="text-xs text-limonka-400 hover:text-limonka-300">
               wszystkie
             </Link>
@@ -110,9 +110,22 @@ export default function Pulpit() {
                 className="rounded-xl py-2.5 px-4 flex items-center justify-between gap-3"
                 style={infoCardStyle(light)}
               >
-                <div>
-                  <p className="text-sm font-medium text-grafit-100">{p.name}</p>
-                  <p className="text-xs text-grafit-400">{p.quantity} {p.unit} · {p.category}</p>
+                <div className="flex items-center gap-3 min-w-0">
+                  {p.image_url ? (
+                    <img
+                      src={p.image_url}
+                      alt=""
+                      className="w-9 h-9 rounded-lg object-cover shrink-0 bg-grafit-700"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg shrink-0 bg-grafit-600 flex items-center justify-center text-base">
+                      🥫
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-grafit-100 truncate">{p.name}</p>
+                    <p className="text-xs text-grafit-400">{p.quantity} {p.unit} · {p.category}</p>
+                  </div>
                 </div>
                 <span className={`text-xs font-medium shrink-0 ${
                   (p.days_left ?? 0) < 0 ? 'text-red-400' :
