@@ -9,6 +9,7 @@ dist/
 build/
 lodowka.db
 backend/data/training_data.csv
+backend/data/kategorie_training.csv
 # modele są commitowane celowo (demo bez trenowania)
 
 

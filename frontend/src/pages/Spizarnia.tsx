@@ -936,7 +936,7 @@ export default function Spizarnia() {
       {dlugoterminowe.length > 0 && (
         <section>
           <h2 className="font-display text-sm font-semibold text-zielony-400 mb-2">
-            Dlugoterminowe - ponad 30 dni ({dlugoterminowe.length})
+            Długoterminowe - ponad 30 dni ({dlugoterminowe.length})
           </h2>
           <div className="grid grid-cols-3 gap-2">
             {dlugoterminowe.map(p => (
