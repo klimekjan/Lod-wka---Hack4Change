@@ -194,3 +194,19 @@ class ZaproszenieResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# --- Serwis OCR LLM --- 
+class Product(BaseModel):
+    name: str
+    quantity: float
+    price: float
+
+
+class Receipt(BaseModel):
+    shop: str | None = None
+    date: str | None = None
+    currency: str | None = None
+    total: float
+    products: list[Product]
+    
