@@ -86,8 +86,9 @@ def pobierz_dashboard(
 
 
 def _oblicz_streak(logi: list, user_created_at: datetime) -> int:
-    if not logi:
-        return 0
+    # "Dni bez marnowania" — liczone wstecz od dziś do daty rejestracji, do pierwszego dnia
+    # z wpisem "wasted". Brak logów = brak marnowania → spójnie liczymy dni od rejestracji
+    # (bez wczesnego return 0, ktory tworzyl niespojnosc wzgledem usera z samym "eaten").
     dni_z_marnotrawstwem = {
         log.logged_at.date() for log in logi if log.action == "wasted"
     }
@@ -101,15 +102,26 @@ def _oblicz_streak(logi: list, user_created_at: datetime) -> int:
 
 
 def _dane_tygodniowe(logi: list, impact: pd.DataFrame) -> List[dict]:
-    result = []
-    for i in range(6, -1, -1):
-        dzien = (datetime.utcnow() - timedelta(days=i)).date()
-        logi_dnia = [l for l in logi if l.logged_at.date() == dzien]
-        uratowane = sum(l.weight_kg or _szacuj_kg(l.quantity, l.unit) for l in logi_dnia if l.action == "eaten")
-        zmarnowane = sum(l.weight_kg or _szacuj_kg(l.quantity, l.unit) for l in logi_dnia if l.action == "wasted")
-        result.append({
-            "dzien": dzien.strftime("%d.%m"),
-            "uratowane": round(uratowane, 2),
-            "zmarnowane": round(zmarnowane, 2),
-        })
-    return result
+    dni = [(datetime.utcnow() - timedelta(days=i)).date() for i in range(6, -1, -1)]
+    okno = set(dni)
+
+    # Jeden przebieg po logach zamiast 7 filtrowań całości.
+    kubelki: dict = {d: {"uratowane": 0.0, "zmarnowane": 0.0} for d in dni}
+    for l in logi:
+        d = l.logged_at.date()
+        if d not in okno:
+            continue
+        kg = l.weight_kg or _szacuj_kg(l.quantity, l.unit)
+        if l.action == "eaten":
+            kubelki[d]["uratowane"] += kg
+        elif l.action == "wasted":
+            kubelki[d]["zmarnowane"] += kg
+
+    return [
+        {
+            "dzien": d.strftime("%d.%m"),
+            "uratowane": round(kubelki[d]["uratowane"], 2),
+            "zmarnowane": round(kubelki[d]["zmarnowane"], 2),
+        }
+        for d in dni
+    ]

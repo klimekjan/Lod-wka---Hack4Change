@@ -102,18 +102,16 @@ export default function Przepisy() {
 
   function oznaczSkladnikiJakoZjedzone(przepis: Przepis) {
     queryClient.fetchQuery({
-      queryKey: ['spizarnia'],
+      queryKey: ['spizarnia', 'active'],
       queryFn: () => spizarnia.lista().then(r => r.data),
-    }).then(produkty => {
-      const uzyteNazwy = przepis.skladniki_spizarni.map(n => n.toLowerCase())
-      const dopasowane = produkty.filter(p =>
-        uzyteNazwy.some(nazwa => p.name.toLowerCase().includes(nazwa))
-      )
-      dopasowane.forEach(p =>
-        spizarnia.akcja(p.id, 'eaten').then(() =>
-          queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
-        )
-      )
+    }).then(async produkty => {
+      // Dokładne dopasowanie (znormalizowane) zamiast includes — AI echo'uje pełne nazwy
+      // produktów, a substring łapał fałszywe trafienia (np. "ser" → "deser").
+      const uzyteNazwy = new Set(przepis.skladniki_spizarni.map(n => n.toLowerCase().trim()))
+      const dopasowane = produkty.filter(p => uzyteNazwy.has(p.name.toLowerCase().trim()))
+      if (dopasowane.length === 0) return
+      await Promise.all(dopasowane.map(p => spizarnia.akcja(p.id, 'eaten')))
+      queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
     })
   }
 

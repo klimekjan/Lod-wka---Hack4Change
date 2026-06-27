@@ -11,7 +11,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    // Nie przekierowuj dla wywołań auth — 401 z logowania/rejestracji to błędne dane,
+    // a twardy redirect przeładowałby stronę i wymazał komunikat błędu.
+    const url: string = err.config?.url ?? ''
+    const isAuthCall = url.includes('/auth/login') || url.includes('/auth/rejestruj')
+    if (err.response?.status === 401 && !isAuthCall) {
       localStorage.removeItem('token')
       window.location.href = '/logowanie'
     }

@@ -189,13 +189,13 @@ def dodaj_wydarzenie(
         lon=lon,
         event_at=dane.event_at,
     )
+    # Jedna transakcja: flush nadaje event.id, dopisujemy organizatora jako uczestnika,
+    # commit obejmuje oba wiersze (brak osieroconego wydarzenia gdy drugi zapis padnie).
     session.add(event)
+    session.flush()
+    session.add(EventParticipant(event_id=event.id, user_id=current_user.id))
     session.commit()
     session.refresh(event)
-
-    uczestnik = EventParticipant(event_id=event.id, user_id=current_user.id)
-    session.add(uczestnik)
-    session.commit()
 
     return _to_response(
         event,
@@ -240,6 +240,16 @@ def wypisz_z_wydarzenia(
     if event.organizer_id == current_user.id:
         raise HTTPException(status_code=400, detail="Organizator nie może opuścić własnego wydarzenia")
 
+    # Wycofaj produkty przekazane na to wydarzenie, zeby nie zostaly osierocone po wypisaniu.
+    for p in session.exec(
+        select(PantryItem).where(
+            PantryItem.user_id == current_user.id,
+            PantryItem.event_id == event_id,
+        )
+    ).all():
+        p.event_id = None
+        session.add(p)
+
     ep = session.exec(
         select(EventParticipant).where(
             EventParticipant.event_id == event_id,
@@ -248,7 +258,7 @@ def wypisz_z_wydarzenia(
     ).first()
     if ep:
         session.delete(ep)
-        session.commit()
+    session.commit()
 
 
 @router.put("/{event_id}/moje-produkty", response_model=WydarzenieResponse)

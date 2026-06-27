@@ -35,9 +35,10 @@ function formatDataGodzina(iso: string): string {
   })
 }
 
-function KartaOgloszenia({ og, czyMoje, userId, onZarezerwuj, onOdebrane, onUsun }: {
+function KartaOgloszenia({ og, czyMoje, userId, onZarezerwuj, onOdebrane, onUsun, zajety = false }: {
   og: Ogloszenie; czyMoje: boolean; userId?: number
   onZarezerwuj: () => void; onOdebrane: () => void; onUsun: () => void
+  zajety?: boolean
 }) {
   const [rozwiniety, setRozwiniety] = useState(false)
   const isMineReservation = og.reserved_by === userId
@@ -87,7 +88,9 @@ function KartaOgloszenia({ og, czyMoje, userId, onZarezerwuj, onOdebrane, onUsun
           )}
           <div className="flex gap-2 flex-wrap">
             {!czyMoje && og.status === 'available' && (
-              <button className="btn text-sm py-1.5" onClick={onZarezerwuj}>Zarezerwuj</button>
+              <button className="btn text-sm py-1.5" onClick={onZarezerwuj} disabled={zajety}>
+                {zajety ? 'Rezerwuję...' : 'Zarezerwuj'}
+              </button>
             )}
             {(czyMoje || isMineReservation) && og.status === 'reserved' && (
               <button className="btn-ghost text-sm py-1.5" onClick={onOdebrane}>Oznacz jako odebrane</button>
@@ -109,6 +112,7 @@ function KartaWydarzenia({
   onWypisz,
   onDodajProdukty,
   onUsun,
+  zajety = false,
 }: {
   w: Wydarzenie
   userId?: number
@@ -116,6 +120,7 @@ function KartaWydarzenia({
   onWypisz: () => void
   onDodajProdukty: () => void
   onUsun: () => void
+  zajety?: boolean
 }) {
   const [rozwiniety, setRozwiniety] = useState(false)
   const { data: szczegoly } = useQuery<WydarzenieSzczegoly>({
@@ -172,8 +177,8 @@ function KartaWydarzenia({
 
           <div className="flex gap-2 flex-wrap">
             {!w.czy_moje && !w.czy_uczestnicze && (
-              <button className="btn text-sm py-1.5" style={{ background: '#9333ea' }} onClick={onZapiszSie}>
-                Zapisz się
+              <button className="btn text-sm py-1.5" style={{ background: '#9333ea' }} onClick={onZapiszSie} disabled={zajety}>
+                {zajety ? 'Zapisuję...' : 'Zapisz się'}
               </button>
             )}
             {w.czy_uczestnicze && !w.czy_moje && (
@@ -181,7 +186,7 @@ function KartaWydarzenia({
                 <button className="btn text-sm py-1.5" style={{ background: '#9333ea' }} onClick={onDodajProdukty}>
                   Dodaj produkty
                 </button>
-                <button className="btn-ghost text-sm py-1.5" onClick={onWypisz}>Wypisz się</button>
+                <button className="btn-ghost text-sm py-1.5" onClick={onWypisz} disabled={zajety}>Wypisz się</button>
               </>
             )}
             {w.czy_moje && (
@@ -222,7 +227,7 @@ export default function Spolecznosc() {
 
   const { data: user } = useQuery({ queryKey: ['user'], queryFn: () => auth.mnie().then(r => r.data) })
   const { data: mojaSpizarnia = [] } = useQuery({
-    queryKey: ['spizarnia'],
+    queryKey: ['spizarnia', 'active'],
     queryFn: () => spizarnia.lista().then(r => r.data),
     enabled: formularzOtwarty,
   })
@@ -529,7 +534,8 @@ export default function Spolecznosc() {
             <KartaOgloszenia key={og.id} og={og} czyMoje={false} userId={user?.id}
               onZarezerwuj={() => mutacjaRezerwuj.mutate(og.id)}
               onOdebrane={() => mutacjaOdebrane.mutate(og.id)}
-              onUsun={() => {}} />
+              onUsun={() => {}}
+              zajety={mutacjaRezerwuj.isPending} />
           ))}
         </div>
       )}
@@ -559,6 +565,7 @@ export default function Spolecznosc() {
           wydarzenia={wydarzeniaLista}
           onZapiszSie={(id) => mutacjaZapiszSie.mutate(id)}
           onDodajProdukty={(id) => navigate(`/spizarnia?wydarzenie=${id}`)}
+          zajety={mutacjaRezerwuj.isPending || mutacjaZapiszSie.isPending}
         />
       )}
 
@@ -579,6 +586,7 @@ export default function Spolecznosc() {
               onWypisz={() => mutacjaWypisz.mutate(w.id)}
               onDodajProdukty={() => navigate(`/spizarnia?wydarzenie=${w.id}`)}
               onUsun={() => mutacjaUsunWydarzenie.mutate(w.id)}
+              zajety={mutacjaZapiszSie.isPending || mutacjaWypisz.isPending}
             />
           ))}
         </div>

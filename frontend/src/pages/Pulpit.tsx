@@ -34,7 +34,7 @@ export default function Pulpit() {
   })
 
   const { data: produkty = [] } = useQuery({
-    queryKey: ['spizarnia'],
+    queryKey: ['spizarnia', 'active'],
     queryFn: () => spizarnia.lista().then(r => r.data),
   })
 

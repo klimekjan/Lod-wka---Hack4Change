@@ -163,7 +163,7 @@ export default function Spizarnia() {
   const [zaznaczone, setZaznaczone] = useState<Set<number>>(new Set())
 
   const { data: produkty = [], isLoading, error } = useQuery({
-    queryKey: ['spizarnia'],
+    queryKey: ['spizarnia', 'active'],
     queryFn: () => spizarnia.lista().then(r => r.data),
   })
 

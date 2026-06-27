@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import update
 from sqlmodel import Session, select
 
 from ..auth import get_current_user
@@ -87,14 +88,18 @@ def zarezerwuj(
     session: Session = Depends(get_session),
 ):
     listing = _get_or_404(listing_id, session)
-    if listing.status != "available":
-        raise HTTPException(status_code=409, detail="Produkt jest już zarezerwowany lub odebrany")
     if listing.user_id == current_user.id:
         raise HTTPException(status_code=400, detail="Nie możesz zarezerwować własnego ogłoszenia")
-    listing.status = "reserved"
-    listing.reserved_by = current_user.id
-    session.add(listing)
+    # Atomowe przejście available→reserved: warunek w WHERE eliminuje wyścig dwóch rezerwacji.
+    # session.execute (nie exec) — natywny CursorResult wystawia .rowcount.
+    wynik = session.execute(
+        update(ShareListing)
+        .where(ShareListing.id == listing_id, ShareListing.status == "available")
+        .values(status="reserved", reserved_by=current_user.id)
+    )
     session.commit()
+    if wynik.rowcount == 0:
+        raise HTTPException(status_code=409, detail="Produkt jest już zarezerwowany lub odebrany")
     session.refresh(listing)
     poster = session.get(User, listing.user_id)
     users = {listing.user_id: poster} if poster else {}
@@ -115,7 +120,10 @@ def oznacz_odebrane(
     session.add(listing)
     session.commit()
     session.refresh(listing)
-    return _to_response(listing, {}, set())
+    poster = session.get(User, listing.user_id)
+    users = {listing.user_id: poster} if poster else {}
+    znajomi = zbior_znajomych(session, current_user.id)
+    return _to_response(listing, users, znajomi)
 
 
 @router.delete("/{listing_id}", status_code=204)

@@ -23,7 +23,7 @@ async def szukaj_produkt(
     if q.isdigit() and 8 <= len(q) <= 14:
         result = await lookup_barcode(q, session)
     else:
-        result = await search_by_name(q)
+        result = await search_by_name(q, session)
 
     if not result or not result.get("name"):
         return BarcodeLookupResponse(found=False)

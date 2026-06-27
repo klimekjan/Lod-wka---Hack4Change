@@ -14,7 +14,7 @@ from ..schemas import (
     ProduktResponse,
 )
 from ..services.ml.features import SHELF_LIFE_DNI
-from ..services.ml.predict import przewiduj_ryzyko
+from ..services.ml.predict import przewiduj_ryzyko_batch
 
 router = APIRouter(prefix="/api/spizarnia", tags=["spizarnia"])
 
@@ -25,18 +25,35 @@ def _dni_do_konca(expires_at: Optional[datetime]) -> Optional[int]:
     return (expires_at - datetime.utcnow()).days
 
 
+def _to_response_bez_ryzyka(item: PantryItem) -> ProduktResponse:
+    r = ProduktResponse.model_validate(item)
+    r.days_left = _dni_do_konca(item.expires_at)
+    return r
+
+
+def _uzupelnij_ryzyko(responses: list[ProduktResponse], items: list[PantryItem]) -> None:
+    """Liczy risk_score jedną batch-predykcją dla pozycji aktywnych (zamiast N osobnych)."""
+    aktywne = [(r, it) for r, it in zip(responses, items) if it.status == "active"]
+    if not aktywne:
+        return
+    wejscia = [
+        {
+            "kategoria": it.category,
+            "dni_do_konca": float(r.days_left) if r.days_left is not None else None,
+            "shelf_life_dni": SHELF_LIFE_DNI.get(it.category, 7),
+            "ilosc_znorm": min(1.0, it.quantity / 5.0),
+        }
+        for r, it in aktywne
+    ]
+    ryzyka = przewiduj_ryzyko_batch(wejscia)
+    for (r, _it), ryzyko in zip(aktywne, ryzyka):
+        r.risk_score = ryzyko
+
+
 def _to_response(item: PantryItem) -> ProduktResponse:
-    dni = _dni_do_konca(item.expires_at)
-    r = ProduktResponse.from_orm(item)
-    r.days_left = dni
-    if item.status == "active":
-        sl = SHELF_LIFE_DNI.get(item.category, 7)
-        r.risk_score = przewiduj_ryzyko(
-            kategoria=item.category,
-            dni_do_konca=float(dni) if dni is not None else None,
-            shelf_life_dni=sl,
-            ilosc_znorm=min(1.0, item.quantity / 5.0),
-        )
+    """Pojedyncza pozycja (POST/PATCH/GET-one) — batch o rozmiarze 1."""
+    r = _to_response_bez_ryzyka(item)
+    _uzupelnij_ryzyko([r], [item])
     return r
 
 
@@ -49,8 +66,9 @@ def lista_produktow(
     query = select(PantryItem).where(PantryItem.user_id == current_user.id)
     if status:
         query = query.where(PantryItem.status == status)
-    items = session.exec(query).all()
-    result = [_to_response(item) for item in items]
+    items = list(session.exec(query).all())
+    result = [_to_response_bez_ryzyka(item) for item in items]
+    _uzupelnij_ryzyko(result, items)
 
     event_ids = {r.event_id for r in result if r.event_id is not None}
     events_map: dict[int, str] = {}

@@ -3,6 +3,7 @@ import os
 import smtplib
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
+from typing import Optional
 
 from sqlmodel import Session, select
 
@@ -68,13 +69,20 @@ def _wyslij_email(do: str, temat: str, tresc: str) -> bool:
         return False
 
 
-def sprawdz_terminy(session: Session) -> int:
-    """Sprawdza terminy ważności i wysyła powiadomienia. Zwraca liczbę wysłanych alertów."""
+def sprawdz_terminy(session: Session, tylko_godzina: Optional[int] = None) -> int:
+    """Sprawdza terminy ważności i wysyła powiadomienia. Zwraca liczbę wysłanych alertów.
+
+    `tylko_godzina` — gdy podane, powiadamia tylko userów z `notify_hour == tylko_godzina`
+    (używane przez scheduler odpalany co godzinę). None = wszyscy (ręczny test).
+    """
     teraz = datetime.utcnow()
     wyslanych = 0
     users = session.exec(select(User)).all()
 
     for user in users:
+        if tylko_godzina is not None and user.notify_hour != tylko_godzina:
+            continue
+
         prog = timedelta(days=user.notify_days_before)
         granica = teraz + prog
 
@@ -95,15 +103,34 @@ def sprawdz_terminy(session: Session) -> int:
             )
         ).all()
 
+        # Dedup: pomijamy produkty, ktore juz maja nieprzeczytane powiadomienie expiry,
+        # zeby codzienne uruchomienia nie zasypywaly listy duplikatami tego samego itemu.
+        juz_powiadomione = {
+            n.item_id
+            for n in session.exec(
+                select(Notification).where(
+                    Notification.user_id == user.id,
+                    Notification.type == "expiry",
+                    Notification.read == False,
+                )
+            ).all()
+        }
+
+        nowe_alerty = []
         for item in przeterminowane:
+            if item.id in juz_powiadomione:
+                continue
             session.add(Notification(
                 user_id=user.id,
                 type="expiry",
                 message=f"{item.name} jest przeterminowany!",
                 item_id=item.id,
             ))
+            nowe_alerty.append(item)
 
         for item in kończące:
+            if item.id in juz_powiadomione:
+                continue
             dni = (item.expires_at - teraz).days
             label = "dzień" if dni == 1 else "dni"
             session.add(Notification(
@@ -112,15 +139,15 @@ def sprawdz_terminy(session: Session) -> int:
                 message=f"{item.name} kończy się za {dni} {label}",
                 item_id=item.id,
             ))
+            nowe_alerty.append(item)
 
-        produkty_alertu = przeterminowane + kończące
-        if not produkty_alertu:
+        if not nowe_alerty:
             continue
 
-        wyslanych += len(produkty_alertu)
-        body_push = f"{len(produkty_alertu)} produktów wymaga uwagi w spiżarni"
+        wyslanych += len(nowe_alerty)
+        body_push = f"{len(nowe_alerty)} produktów wymaga uwagi w spiżarni"
         body_email = "\n".join(
-            [f"- {p.name}" for p in produkty_alertu]
+            [f"- {p.name}" for p in nowe_alerty]
         )
 
         frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")

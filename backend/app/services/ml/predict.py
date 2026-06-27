@@ -51,6 +51,32 @@ def przewiduj_ryzyko(
         return ryzyko_heurystyczne(kategoria, dni_do_konca)
 
 
+def przewiduj_ryzyko_batch(wejscia: list[dict]) -> list[float]:
+    """Batch wersja `przewiduj_ryzyko` — jedna predykcja zamiast N osobnych.
+
+    Każde wejście: {kategoria, dni_do_konca, shelf_life_dni, ilosc_znorm}.
+    """
+    from .features import cechy, ryzyko_heurystyczne
+
+    if not wejscia:
+        return []
+
+    if _model is None:
+        return [ryzyko_heurystyczne(w["kategoria"], w["dni_do_konca"]) for w in wejscia]
+
+    try:
+        import numpy as np
+        X = np.array([
+            cechy(w["kategoria"], w["dni_do_konca"], w.get("shelf_life_dni"), w.get("ilosc_znorm", 0.5))
+            for w in wejscia
+        ])
+        probs = _model.predict_proba(X)[:, 1]
+        return [round(float(p), 3) for p in probs]
+    except Exception:
+        from .features import ryzyko_heurystyczne
+        return [ryzyko_heurystyczne(w["kategoria"], w["dni_do_konca"]) for w in wejscia]
+
+
 def przewiduj_koniec_zapasow(
     kategoria: str,
     ilosc: float,

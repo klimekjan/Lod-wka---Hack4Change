@@ -63,6 +63,20 @@ def _status_dla(session: Session, moje_id: int, innych_id: int) -> str:
     return "oczekuje"
 
 
+def _mapuj_statusy(rows: List[Friendship], moje_id: int) -> dict:
+    """Buduje {id_drugiej_osoby: status} z listy relacji — bez zapytania per użytkownik."""
+    wynik: dict = {}
+    for rel in rows:
+        inny = rel.addressee_id if rel.requester_id == moje_id else rel.requester_id
+        if rel.status == "accepted":
+            wynik[inny] = "znajomy"
+        elif rel.requester_id == moje_id:
+            wynik[inny] = "wyslane"
+        else:
+            wynik[inny] = "oczekuje"
+    return wynik
+
+
 def _profil(user: User, status: str) -> ProfilPublicznyResponse:
     return ProfilPublicznyResponse(
         id=user.id,
@@ -92,7 +106,21 @@ def szukaj_uzytkownikow(
             ),
         ).limit(20)
     ).all()
-    return [_profil(u, _status_dla(session, current_user.id, u.id)) for u in users]
+    if not users:
+        return []
+
+    # Jedno zapytanie po wszystkie relacje z kandydatami zamiast _status_dla per user.
+    ids = [u.id for u in users]
+    relacje = session.exec(
+        select(Friendship).where(
+            or_(
+                and_(Friendship.requester_id == current_user.id, Friendship.addressee_id.in_(ids)),
+                and_(Friendship.addressee_id == current_user.id, Friendship.requester_id.in_(ids)),
+            )
+        )
+    ).all()
+    statusy = _mapuj_statusy(relacje, current_user.id)
+    return [_profil(u, statusy.get(u.id, "brak")) for u in users]
 
 
 @router.get("", response_model=List[ProfilPublicznyResponse])
@@ -118,9 +146,16 @@ def lista_zaproszen(
             Friendship.status == "pending",
         ).order_by(Friendship.created_at.desc())
     ).all()
+    if not zaproszenia:
+        return []
+
+    # Batch-wczytaj nadawców zamiast session.get w pętli.
+    requester_ids = {z.requester_id for z in zaproszenia}
+    users_map = {u.id: u for u in session.exec(select(User).where(User.id.in_(requester_ids))).all()}
+
     wynik = []
     for z in zaproszenia:
-        requester = session.get(User, z.requester_id)
+        requester = users_map.get(z.requester_id)
         wynik.append(ZaproszenieResponse(
             id=z.id,
             requester_id=z.requester_id,

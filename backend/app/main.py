@@ -4,16 +4,14 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 load_dotenv()
 
 from .db import init_db
+from .limiter import limiter
 from .routers import auth, pantry, notifications, dashboard, community, produkty, push, recipes, friends, events
-
-limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager
@@ -35,7 +33,8 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[FRONTEND_URL, "http://localhost:3000"],
-    allow_credentials=True,
+    # Aplikacja uwierzytelnia przez Bearer token w naglowku, nie cookies — credentials zbedne.
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

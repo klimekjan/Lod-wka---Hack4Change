@@ -54,6 +54,7 @@ interface Props {
   wydarzenia?: Wydarzenie[]
   onZapiszSie?: (id: number) => void
   onDodajProdukty?: (id: number) => void
+  zajety?: boolean
 }
 
 export default function MapaWymiany({
@@ -63,6 +64,7 @@ export default function MapaWymiany({
   wydarzenia = [],
   onZapiszSie,
   onDodajProdukty,
+  zajety = false,
 }: Props) {
   const zPinezka = useMemo(
     () => ogloszenia.filter(o => o.lat != null && o.lon != null),
@@ -118,10 +120,11 @@ export default function MapaWymiany({
                   )}
                   {o.status === 'available' && o.user_id !== userId && (
                     <button
-                      className="btn-primary text-sm py-1 px-3 mt-1 w-full"
+                      className="btn-primary text-sm py-1 px-3 mt-1 w-full disabled:opacity-50"
                       onClick={() => onZarezerwuj(o.id)}
+                      disabled={zajety}
                     >
-                      Zarezerwuj
+                      {zajety ? 'Rezerwuję...' : 'Zarezerwuj'}
                     </button>
                   )}
                   {o.user_id === userId && (
@@ -145,11 +148,12 @@ export default function MapaWymiany({
                 )}
                 {!w.czy_moje && !w.czy_uczestnicze && onZapiszSie && (
                   <button
-                    className="btn-primary text-sm py-1 px-3 mt-1 w-full"
+                    className="btn-primary text-sm py-1 px-3 mt-1 w-full disabled:opacity-50"
                     style={{ backgroundColor: '#9333ea' }}
                     onClick={() => onZapiszSie(w.id)}
+                    disabled={zajety}
                   >
-                    Zapisz się
+                    {zajety ? 'Zapisuję...' : 'Zapisz się'}
                   </button>
                 )}
                 {w.czy_uczestnicze && !w.czy_moje && onDodajProdukty && (

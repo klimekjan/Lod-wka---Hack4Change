@@ -91,13 +91,13 @@ async def lookup_barcode(barcode: str, session: Session) -> dict | None:
     return {"name": name, "category": category, "image_url": image_url}
 
 
-async def search_by_name(query: str) -> dict | None:
+async def search_by_name(query: str, session: Session | None = None) -> dict | None:
     try:
         async with httpx.AsyncClient(timeout=6.0) as client:
             resp = await client.get(OFF_SEARCH_URL, params={
                 "search_terms": query,
                 "page_size": 1,
-                "fields": "product_name,product_name_pl,categories_tags,image_front_small_url,image_url",
+                "fields": "code,product_name,product_name_pl,categories_tags,image_front_small_url,image_url",
             })
             data = resp.json()
     except Exception:
@@ -118,4 +118,18 @@ async def search_by_name(query: str) -> dict | None:
 
     category = _mapuj_kategorie(product.get("categories_tags", []))
     image_url = product.get("image_front_small_url") or product.get("image_url")
+
+    # Cache po barcode jesli OFF zwrocil kod — kolejne skany tego produktu trafia w cache.
+    code = (product.get("code") or "").strip()
+    if session is not None and code and not session.get(ProductCache, code):
+        session.add(ProductCache(
+            barcode=code,
+            name=name,
+            category=category,
+            image_url=image_url,
+            raw_json=json.dumps(product, ensure_ascii=False)[:4000],
+            fetched_at=datetime.utcnow(),
+        ))
+        session.commit()
+
     return {"name": name, "category": category, "image_url": image_url}
