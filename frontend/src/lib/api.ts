@@ -92,6 +92,7 @@ export interface DashboardStats {
   kg_uratowane: number
   kg_zmarnowane: number
   kg_oddane: number
+  zl_zaoszczedzone: number
   co2_unikniete: number
   streak_dni: number
   wskaznik_uratowania: number
@@ -163,6 +164,7 @@ export const spizarnia = {
   skanuj: (barcode: string) => api.get<{ found: boolean; name?: string; category?: string; image_url?: string; default_shelf_days?: number }>(`/produkty/barcode/${barcode}`),
   szukaj: (q: string) => api.get<{ found: boolean; name?: string; category?: string; image_url?: string; default_shelf_days?: number }>('/produkty/szukaj', { params: { q } }),
   kategoria: (nazwa: string) => api.get<{ kategoria: string; pewnosc: number }>('/produkty/kategoria', { params: { nazwa } }),
+  wzbogac: (nazwy: string[]) => api.post<SugestiaProduktu[]>('/produkty/wzbogac', { nazwy }),
 }
 
 // Powiadomienia
@@ -268,6 +270,30 @@ export const wydarzenia = {
   przekazProdukty: (id: number, pantry_item_ids: number[]) =>
     api.put<Wydarzenie>(`/wydarzenia/${id}/moje-produkty`, { pantry_item_ids }),
   usun: (id: number) => api.delete(`/wydarzenia/${id}`),
+}
+
+// Paragony
+
+export interface ReceiptProduct {
+  name: string
+  quantity: number
+  price: number
+}
+
+export interface Receipt {
+  shop?: string
+  date?: string
+  currency?: string
+  total: number
+  products: ReceiptProduct[]
+}
+
+export const paragony = {
+  zaladuj: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post<Receipt>('/paragony/zaladuj', formData)
+  },
 }
 
 // Znajomi

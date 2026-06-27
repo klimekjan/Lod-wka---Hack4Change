@@ -1,8 +1,8 @@
-import { useState, FormEvent, useCallback, useEffect } from 'react'
+import { useState, useRef, FormEvent, useCallback, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
-import { spizarnia, wydarzenia as wydarzeniaApi, Produkt, SugestiaProduktu } from '../lib/api'
+import { spizarnia, paragony, wydarzenia as wydarzeniaApi, Produkt, SugestiaProduktu } from '../lib/api'
 import BarcodeScanner from '../components/BarcodeScanner'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import { IconProdukt } from '../components/ikony'
@@ -92,12 +92,14 @@ function formatData(expiresAt?: string | null): string {
 function KafelekProduktu({
   produkt,
   onAkcja,
+  onInfo,
   trybWyboru = false,
   zaznaczony = false,
   onToggle,
 }: {
   produkt: Produkt
   onAkcja: (action: string, weightKg?: number) => void
+  onInfo?: () => void
   trybWyboru?: boolean
   zaznaczony?: boolean
   onToggle?: () => void
@@ -165,12 +167,22 @@ function KafelekProduktu({
         </span>
       )}
 
-      <span className="absolute top-1.5 right-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-black/40 text-white backdrop-blur-sm">
-        {produkt.quantity} {produkt.unit}
-      </span>
+      {!trybWyboru && onInfo && (
+        <button
+          className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm"
+          onClick={e => { e.stopPropagation(); onInfo() }}
+        >
+          <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
+          </svg>
+        </button>
+      )}
 
       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-2 pt-4 pb-1.5">
-        <p className="text-white text-xs font-medium truncate leading-tight">{produkt.name}</p>
+        <div className="flex items-end justify-between gap-1">
+          <p className="text-white text-xs font-medium truncate leading-tight flex-1">{produkt.name}</p>
+          <span className="text-[10px] text-white/70 shrink-0 leading-tight">{produkt.quantity}{produkt.unit}</span>
+        </div>
         {!trybWyboru && produkt.event_name && (
           <p className="text-[9px] font-medium truncate" style={{ color: '#c084fc' }}>
             → {produkt.event_name}
@@ -284,6 +296,14 @@ export default function Spizarnia() {
   const [formularzKrok, setFormularzKrok] = useState<'nazwa' | 'szczegoly'>('nazwa')
   const [klasyfikuje, setKlasyfikuje] = useState(false)
   const [skanerOtwarty, setSkanerOtwarty] = useState(false)
+  const [wyborSkanera, setWyborSkanera] = useState(false)
+  const [paragonLaduje, setParagonLaduje] = useState(false)
+  const [paragonProdukty, setParagonProdukty] = useState<{ name: string; quantity: number; category: string; image_url?: string }[] | null>(null)
+  const paragonCameraRef = useRef<HTMLInputElement>(null)
+  const paragonGaleriaRef = useRef<HTMLInputElement>(null)
+  const [produktInfo, setProduktInfo] = useState<Produkt | null>(null)
+  const [trybEdycji, setTrybEdycji] = useState(false)
+  const [formEdycji, setFormEdycji] = useState({ name: '', category: 'inne', quantity: '1', unit: 'szt.', expiresAt: '' })
   const [form, setForm] = useState<FormState>(defaultForm)
   const [skanBlad, setSkanBlad] = useState('')
   const [akcjaOk, setAkcjaOk] = useState('')
@@ -342,6 +362,15 @@ export default function Spizarnia() {
       queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
       queryClient.invalidateQueries({ queryKey: ['wydarzenie', wydarzenieId] })
       navigate('/spolecznosc')
+    },
+  })
+
+  const mutacjaEdytuj = useMutation({
+    mutationFn: ({ id, dane }: { id: number; dane: Partial<Produkt> }) => spizarnia.aktualizuj(id, dane),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
+      setProduktInfo(null)
+      setTrybEdycji(false)
     },
   })
 
@@ -435,6 +464,84 @@ export default function Spizarnia() {
     })
   }
 
+  async function handleParagonFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setWyborSkanera(false)
+    setParagonLaduje(true)
+    try {
+      const ocrRes = await paragony.zaladuj(file)
+      const ocrProdukty = ocrRes.data.products
+      if (!ocrProdukty.length) {
+        setSkanBlad('Nie wykryto produktów na paragonie.')
+        return
+      }
+      const wzbRes = await spizarnia.wzbogac(ocrProdukty.map(p => p.name))
+      const enriched = ocrProdukty.map((p, i) => ({
+        name: p.name,
+        quantity: p.quantity,
+        category: wzbRes.data[i]?.category ?? 'inne',
+        image_url: wzbRes.data[i]?.image_url,
+      }))
+      setParagonProdukty(enriched)
+    } catch {
+      setSkanBlad('Nie udało się odczytać paragonu. Spróbuj wyraźniejsze zdjęcie.')
+    } finally {
+      setParagonLaduje(false)
+    }
+  }
+
+  async function dodajZParagonu() {
+    if (!paragonProdukty) return
+    try {
+      await Promise.all(
+        paragonProdukty.map(p =>
+          spizarnia.dodaj({
+            name: p.name,
+            category: p.category,
+            quantity: p.quantity,
+            unit: 'szt.',
+            image_url: p.image_url,
+            expires_at: new Date(obliczDateWaznosci(p.category, false)).toISOString(),
+          })
+        )
+      )
+      queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
+      setAkcjaOk(`Dodano ${paragonProdukty.length} produktów z paragonu.`)
+      setTimeout(() => setAkcjaOk(''), 4000)
+      setParagonProdukty(null)
+    } catch {
+      setSkanBlad('Błąd dodawania produktów z paragonu.')
+    }
+  }
+
+  function openProduktInfo(p: Produkt) {
+    setProduktInfo(p)
+    setTrybEdycji(true)
+    setFormEdycji({
+      name: p.name,
+      category: p.category,
+      quantity: String(p.quantity),
+      unit: p.unit,
+      expiresAt: p.expires_at ? p.expires_at.slice(0, 10) : '',
+    })
+  }
+
+  function zapiszEdycje() {
+    if (!produktInfo) return
+    mutacjaEdytuj.mutate({
+      id: produktInfo.id,
+      dane: {
+        name: formEdycji.name,
+        category: formEdycji.category,
+        quantity: parseFloat(formEdycji.quantity),
+        unit: formEdycji.unit,
+        expires_at: formEdycji.expiresAt ? new Date(formEdycji.expiresAt).toISOString() : undefined,
+      },
+    })
+  }
+
   function toggleZaznaczenie(id: number) {
     setZaznaczone(prev => {
       const next = new Set(prev)
@@ -449,15 +556,82 @@ export default function Spizarnia() {
     mutacjaPrzekazProdukty.mutate({ id: wydarzenieId, ids: [...zaznaczone] })
   }
 
-  const przeterminowane = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left < 0)
-  const naWylocie = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left >= 0 && p.days_left <= 3)
-  const swieże = produkty.filter(p => p.days_left === undefined || p.days_left === null || p.days_left > 3)
+  const krotkoterminowe = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left < 7)
+  const sredniotrwale = produkty.filter(p => p.days_left !== undefined && p.days_left !== null && p.days_left >= 7 && p.days_left < 30)
+  const dlugoterminowe = produkty.filter(p => p.days_left === undefined || p.days_left === null || p.days_left >= 30)
 
   const trybWyboru = wydarzenieId !== null
   const nazwaNazwy = wydarzenieSzczegoly?.name ?? `wydarzenie #${wydarzenieId}`
 
   return (
     <div className="space-y-4">
+      <input ref={paragonCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleParagonFile} />
+      <input ref={paragonGaleriaRef} type="file" accept="image/*" className="hidden" onChange={handleParagonFile} />
+
+      {wyborSkanera && (
+        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setWyborSkanera(false)}>
+          <div className="absolute inset-0 bg-black/50" />
+          <div
+            className="relative w-full bg-grafit-800 border-t border-grafit-700 rounded-t-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex flex-col divide-y divide-grafit-700">
+              <button
+                className="flex items-center gap-3.5 px-5 py-4 text-left active:bg-grafit-700 transition-colors"
+                onClick={() => { setWyborSkanera(false); setSkanerOtwarty(true) }}
+              >
+                <div className="w-8 h-8 rounded-lg bg-grafit-700 border border-grafit-600 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-grafit-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M3 9V6a1 1 0 0 1 1-1h3M21 9V6a1 1 0 0 1-1-1h-3M3 15v3a1 1 0 0 0 1 1h3M21 15v3a1 1 0 0 1-1 1h-3M7 8v8M10 8v8M13 8v8M16 8v8" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-grafit-100">Kod kreskowy</p>
+                  <p className="text-xs text-grafit-400 mt-0.5">Wyszukaj produkt po kodzie EAN</p>
+                </div>
+              </button>
+              <button
+                className="flex items-center gap-3.5 px-5 py-4 text-left active:bg-grafit-700 transition-colors"
+                onClick={() => { setWyborSkanera(false); paragonCameraRef.current?.click() }}
+              >
+                <div className="w-8 h-8 rounded-lg bg-grafit-700 border border-grafit-600 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-grafit-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-grafit-100">Zrób zdjęcie paragonu</p>
+                  <p className="text-xs text-grafit-400 mt-0.5">Użyj aparatu</p>
+                </div>
+              </button>
+              <button
+                className="flex items-center gap-3.5 px-5 py-4 text-left active:bg-grafit-700 transition-colors"
+                onClick={() => { setWyborSkanera(false); paragonGaleriaRef.current?.click() }}
+              >
+                <div className="w-8 h-8 rounded-lg bg-grafit-700 border border-grafit-600 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-grafit-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-grafit-100">Wybierz z galerii</p>
+                  <p className="text-xs text-grafit-400 mt-0.5">Prześlij zdjęcie z urządzenia</p>
+                </div>
+              </button>
+              <button
+                className="px-5 py-4 text-sm text-grafit-400 font-medium text-center active:bg-grafit-700 transition-colors"
+                onClick={() => setWyborSkanera(false)}
+              >
+                Anuluj
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {skanerOtwarty && (
         <BarcodeScanner onScan={handleScan} onSearch={handleSearch} onClose={() => setSkanerOtwarty(false)} />
       )}
@@ -492,7 +666,7 @@ export default function Spizarnia() {
           <div className="flex gap-2">
             <button
               className="btn-ghost text-sm"
-              onClick={() => { setSkanBlad(''); setSkanerOtwarty(true) }}
+              onClick={() => { setSkanBlad(''); setWyborSkanera(true) }}
             >
               Skanuj
             </button>
@@ -528,6 +702,50 @@ export default function Spizarnia() {
         <div className="bg-bursztyn-500/10 border border-bursztyn-500/40 text-bursztyn-400 text-sm px-3 py-2 rounded-lg flex items-center justify-between gap-3">
           <span>Żeby oddać produkt na mapie, najpierw ustaw adres w profilu.</span>
           <Link to="/ustawienia" className="btn text-xs py-1 px-3 shrink-0">Ustawienia</Link>
+        </div>
+      )}
+
+      {paragonLaduje && (
+        <div className="karta text-center py-6 space-y-2">
+          <div className="inline-block w-6 h-6 border-2 border-grafit-600 border-t-limonka-400 rounded-full animate-spin" />
+          <p className="text-sm text-grafit-400">Odczytuję paragon...</p>
+        </div>
+      )}
+
+      {paragonProdukty && (
+        <div className="karta space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-grafit-100">Produkty z paragonu</h2>
+            <span className="text-xs text-grafit-400">{paragonProdukty.length} szt.</span>
+          </div>
+          <div className="space-y-1 max-h-72 overflow-y-auto -mx-1 px-1">
+            {paragonProdukty.map((p, i) => (
+              <div key={i} className="flex items-center gap-2.5 py-1.5 border-b border-grafit-700 last:border-0">
+                <div
+                  className="w-8 h-8 rounded-md shrink-0 overflow-hidden flex items-center justify-center"
+                  style={{ background: KOLOR_KATEGORII[p.category] ?? '#26271f' }}
+                >
+                  {p.image_url
+                    ? <img src={p.image_url} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    : <IconProdukt className="w-4 h-4 opacity-40" />
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-grafit-100 truncate leading-tight">{p.name}</p>
+                  <p className="text-[10px] text-grafit-400 mt-0.5">{p.category}</p>
+                </div>
+                <span className="text-xs text-grafit-400 shrink-0">×{p.quantity}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button className="btn text-sm" onClick={dodajZParagonu}>
+              Dodaj wszystkie
+            </button>
+            <button className="btn-ghost text-sm" onClick={() => setParagonProdukty(null)}>
+              Anuluj
+            </button>
+          </div>
         </div>
       )}
 
@@ -659,17 +877,18 @@ export default function Spizarnia() {
         </div>
       )}
 
-      {przeterminowane.length > 0 && (
+      {krotkoterminowe.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-red-400 uppercase tracking-widest mb-2">
-            Przeterminowane ({przeterminowane.length})
+          <h2 className="font-display text-sm font-semibold text-bursztyn-400 mb-2">
+            Krótkoterminowe - do 7 dni ({krotkoterminowe.length})
           </h2>
           <div className="grid grid-cols-3 gap-2">
-            {przeterminowane.map(p => (
+            {krotkoterminowe.map(p => (
               <KafelekProduktu
                 key={p.id}
                 produkt={p}
                 onAkcja={(action, weightKg) => mutacjaAkcja.mutate({ id: p.id, action, weightKg })}
+                onInfo={() => openProduktInfo(p)}
                 trybWyboru={trybWyboru}
                 zaznaczony={zaznaczone.has(p.id)}
                 onToggle={() => toggleZaznaczenie(p.id)}
@@ -679,17 +898,18 @@ export default function Spizarnia() {
         </section>
       )}
 
-      {naWylocie.length > 0 && (
+      {sredniotrwale.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-bursztyn-400 uppercase tracking-widest mb-2">
-            Na wylocie ({naWylocie.length})
+          <h2 className="font-display text-sm font-semibold text-grafit-400 mb-2">
+            Średniotrwale - 7-30 dni ({sredniotrwale.length})
           </h2>
           <div className="grid grid-cols-3 gap-2">
-            {naWylocie.map(p => (
+            {sredniotrwale.map(p => (
               <KafelekProduktu
                 key={p.id}
                 produkt={p}
                 onAkcja={(action, weightKg) => mutacjaAkcja.mutate({ id: p.id, action, weightKg })}
+                onInfo={() => openProduktInfo(p)}
                 trybWyboru={trybWyboru}
                 zaznaczony={zaznaczone.has(p.id)}
                 onToggle={() => toggleZaznaczenie(p.id)}
@@ -699,17 +919,18 @@ export default function Spizarnia() {
         </section>
       )}
 
-      {swieże.length > 0 && (
+      {dlugoterminowe.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-grafit-400 uppercase tracking-widest mb-2">
-            Świeże ({swieże.length})
+          <h2 className="font-display text-sm font-semibold text-zielony-400 mb-2">
+            Dlugoterminowe - ponad 30 dni ({dlugoterminowe.length})
           </h2>
           <div className="grid grid-cols-3 gap-2">
-            {swieże.map(p => (
+            {dlugoterminowe.map(p => (
               <KafelekProduktu
                 key={p.id}
                 produkt={p}
                 onAkcja={(action, weightKg) => mutacjaAkcja.mutate({ id: p.id, action, weightKg })}
+                onInfo={() => openProduktInfo(p)}
                 trybWyboru={trybWyboru}
                 zaznaczony={zaznaczone.has(p.id)}
                 onToggle={() => toggleZaznaczenie(p.id)}
@@ -717,6 +938,150 @@ export default function Spizarnia() {
             ))}
           </div>
         </section>
+      )}
+
+      {produktInfo && (
+        <div className="fixed inset-0 z-50 flex items-end" onClick={() => { setProduktInfo(null); setTrybEdycji(false) }}>
+          <div className="absolute inset-0 bg-black/60" />
+          <div
+            className="relative w-full bg-grafit-800 border-t border-grafit-700 rounded-t-2xl overflow-hidden max-h-[85vh] flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-grafit-700 shrink-0">
+              <h2 className="font-display font-semibold text-grafit-100">
+                {trybEdycji ? 'Edytuj produkt' : 'Informacje'}
+              </h2>
+              <button className="text-grafit-400 text-sm" onClick={() => { setProduktInfo(null); setTrybEdycji(false) }}>
+                Zamknij
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-5 space-y-4">
+              {!trybEdycji ? (
+                <>
+                  <div className="flex gap-4">
+                    <div
+                      className="w-16 h-16 rounded-xl shrink-0 overflow-hidden flex items-center justify-center"
+                      style={{ background: KOLOR_KATEGORII[produktInfo.category] ?? '#26271f' }}
+                    >
+                      {produktInfo.image_url
+                        ? <img src={produktInfo.image_url} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                        : <IconProdukt className="w-7 h-7 opacity-30" />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display font-semibold text-grafit-100 text-lg leading-tight">{produktInfo.name}</p>
+                      <p className="text-sm text-grafit-400 mt-0.5">{produktInfo.category}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {[
+                      ['Ilość', `${produktInfo.quantity} ${produktInfo.unit}`],
+                      ['Termin ważności', produktInfo.expires_at
+                        ? `${formatData(produktInfo.expires_at)}${produktInfo.days_left !== undefined ? ` (${produktInfo.days_left >= 0 ? `${produktInfo.days_left} dni` : 'przeterminowany'})` : ''}`
+                        : '—'],
+                      ['Status', produktInfo.status],
+                      ['Dodano', new Date(produktInfo.added_at).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })],
+                      ...(produktInfo.barcode ? [['Kod kreskowy', produktInfo.barcode]] : []),
+                      ...(produktInfo.risk_score !== undefined && produktInfo.risk_score !== null
+                        ? [['Ryzyko zmarnowania', `${Math.round(produktInfo.risk_score * 100)}%`]]
+                        : []),
+                    ].map(([label, value]) => (
+                      <div key={label} className="flex items-start justify-between gap-4 py-2 border-b border-grafit-700 last:border-0">
+                        <span className="text-sm text-grafit-400 shrink-0">{label}</span>
+                        <span className={`text-sm font-medium text-right ${
+                          label === 'Termin ważności' && produktInfo.days_left !== undefined
+                            ? produktInfo.days_left < 0 ? 'text-red-400' : produktInfo.days_left <= 2 ? 'text-orange-400' : 'text-grafit-100'
+                            : 'text-grafit-100'
+                        }`}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    className="btn w-full text-sm"
+                    onClick={() => setTrybEdycji(true)}
+                  >
+                    Edytuj
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-grafit-300 mb-1">Nazwa</label>
+                    <input
+                      className="input"
+                      value={formEdycji.name}
+                      onChange={e => setFormEdycji(f => ({ ...f, name: e.target.value }))}
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-grafit-300 mb-1">Kategoria</label>
+                    <select
+                      className="input"
+                      value={formEdycji.category}
+                      onChange={e => setFormEdycji(f => ({ ...f, category: e.target.value }))}
+                    >
+                      {KATEGORIE.map(k => <option key={k}>{k}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-grafit-300 mb-1">Ilość</label>
+                      <input
+                        className="input"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={formEdycji.quantity}
+                        onChange={e => setFormEdycji(f => ({ ...f, quantity: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-grafit-300 mb-1">Jednostka</label>
+                      <select
+                        className="input"
+                        value={formEdycji.unit}
+                        onChange={e => setFormEdycji(f => ({ ...f, unit: e.target.value }))}
+                      >
+                        {JEDNOSTKI.map(j => <option key={j}>{j}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-grafit-300 mb-1">Termin ważności</label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={formEdycji.expiresAt}
+                      onChange={e => setFormEdycji(f => ({ ...f, expiresAt: e.target.value }))}
+                    />
+                  </div>
+                  {mutacjaEdytuj.error && (
+                    <p className="text-sm text-red-400">Błąd zapisu — spróbuj ponownie.</p>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      className="btn flex-1 text-sm"
+                      onClick={zapiszEdycje}
+                      disabled={mutacjaEdytuj.isPending}
+                    >
+                      {mutacjaEdytuj.isPending ? 'Zapisuję...' : 'Zapisz'}
+                    </button>
+                    <button
+                      className="btn-ghost flex-1 text-sm"
+                      onClick={() => setTrybEdycji(false)}
+                    >
+                      Anuluj
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

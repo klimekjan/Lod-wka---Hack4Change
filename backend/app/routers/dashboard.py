@@ -74,26 +74,28 @@ def pobierz_dashboard(
 
     impact = _IMPACT
 
-    def wspolczynniki(kategoria: str):
+    def wspolczynniki(kategoria: str) -> tuple[float, float]:
         if kategoria in impact.index:
             row = impact.loc[kategoria]
-            return float(row["co2_kg_per_kg"])
-        return 1.0
+            return float(row["co2_kg_per_kg"]), float(row["cena_pln_per_kg"])
+        return 1.0, 8.0
 
     kg_uratowane = 0.0
     kg_zmarnowane = 0.0
     kg_oddane = 0.0
     co2_unikniete = 0.0
+    zl_zaoszczedzone = 0.0
     liczba_uratowan = 0
     kg_na_styk = 0.0
 
     for log in logi:
         kg = log.weight_kg if log.weight_kg else _szacuj_kg(log.quantity, log.unit, log.category)
-        co2_f = wspolczynniki(log.category)
+        co2_f, cena_f = wspolczynniki(log.category)
 
         if log.action in ("eaten", "shared"):
             kg_uratowane += kg
             co2_unikniete += kg * co2_f
+            zl_zaoszczedzone += kg * cena_f
             if log.action == "shared":
                 kg_oddane += kg
             if log.days_left_at_log is not None and log.days_left_at_log <= 2:
@@ -112,6 +114,7 @@ def pobierz_dashboard(
         kg_uratowane=round(kg_uratowane, 2),
         kg_zmarnowane=round(kg_zmarnowane, 2),
         kg_oddane=round(kg_oddane, 2),
+        zl_zaoszczedzone=round(zl_zaoszczedzone, 2),
         co2_unikniete=round(co2_unikniete, 2),
         streak_dni=streak,
         wskaznik_uratowania=wskaznik,

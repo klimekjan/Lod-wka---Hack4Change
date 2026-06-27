@@ -135,6 +135,10 @@ class SugestiaProduktu(BaseModel):
     default_shelf_days: Optional[int] = None
 
 
+class WzbogacRequest(BaseModel):
+    nazwy: List[str]
+
+
 class KategoriaResponse(BaseModel):
     kategoria: str
     pewnosc: float
@@ -162,6 +166,7 @@ class DashboardStats(BaseModel):
     kg_uratowane: float
     kg_zmarnowane: float
     kg_oddane: float
+    zl_zaoszczedzone: float = 0.0
     co2_unikniete: float
     streak_dni: int
     wskaznik_uratowania: float

@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 
 from fastapi import APIRouter, Depends
@@ -6,13 +7,31 @@ from sqlmodel import Session, select
 from ..auth import get_current_user
 from ..db import get_session
 from ..models import User, ProductCache
-from ..schemas import BarcodeLookupResponse, SugestiaProduktu, KategoriaResponse
+from ..schemas import BarcodeLookupResponse, SugestiaProduktu, KategoriaResponse, WzbogacRequest
 from ..services.ml.classify import klasyfikuj
 from ..services.openfoodfacts import lookup_barcode, search_by_name, search_suggestions_es
 from ..services.local_products import szukaj_lokalnie
 from ..services.shelflife import domyslne_dni
 
 router = APIRouter(prefix="/api/produkty", tags=["produkty"])
+
+
+@router.post("/wzbogac", response_model=List[SugestiaProduktu])
+async def wzbogac_produkty(
+    dane: WzbogacRequest,
+    current_user: User = Depends(get_current_user),
+):
+    async def jeden(nazwa: str) -> SugestiaProduktu:
+        off = await search_by_name(nazwa, None)
+        kat = off["category"] if off else "inne"
+        image = off.get("image_url") if off else None
+        if kat == "inne":
+            clf_kat, _ = klasyfikuj(nazwa)
+            if clf_kat != "inne":
+                kat = clf_kat
+        return SugestiaProduktu(name=nazwa, category=kat, image_url=image, default_shelf_days=domyslne_dni(kat))
+
+    return list(await asyncio.gather(*[jeden(n) for n in dane.nazwy]))
 
 
 @router.get("/kategoria", response_model=KategoriaResponse)
