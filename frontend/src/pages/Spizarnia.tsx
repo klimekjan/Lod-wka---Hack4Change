@@ -64,9 +64,7 @@ function KafelekProduktu({
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-4xl text-grafit-500">
-          🥫
-        </div>
+        <div className="w-full h-full bg-grafit-700" />
       )}
 
       {produkt.expires_at && (
