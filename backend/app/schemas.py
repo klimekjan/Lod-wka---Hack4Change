@@ -40,6 +40,7 @@ class UserResponse(BaseModel):
     notify_days_before: int
     notify_hour: int
     created_at: datetime
+    email_verified: bool = False
 
     class Config:
         from_attributes = True
@@ -126,6 +127,18 @@ class BarcodeLookupResponse(BaseModel):
     category: Optional[str] = None
     image_url: Optional[str] = None
     default_shelf_days: Optional[int] = None
+
+
+class SugestiaProduktu(BaseModel):
+    name: str
+    category: str
+    image_url: Optional[str] = None
+    default_shelf_days: Optional[int] = None
+
+
+class KategoriaResponse(BaseModel):
+    kategoria: str
+    pewnosc: float
 
 
 # --- Dashboard ---

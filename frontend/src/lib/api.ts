@@ -60,6 +60,7 @@ export interface User {
   notify_days_before: number
   notify_hour: number
   created_at: string
+  email_verified: boolean
 }
 
 export interface ProfilPubliczny {
@@ -125,6 +126,8 @@ export interface Ogloszenie {
 // Auth
 
 export const auth = {
+  weryfikujEmail: (token: string) => api.get<{ ok: boolean; message: string }>('/auth/weryfikuj', { params: { token } }),
+  wyslijWeryfikacje: () => api.post('/auth/wyslij-weryfikacje'),
   rejestruj: (
     email: string,
     haslo: string,
@@ -143,6 +146,15 @@ export const auth = {
   ustawienia: (dane: Record<string, unknown>) => api.patch<User>('/auth/ustawienia', dane),
 }
 
+// Open Food Facts
+
+export interface SugestiaProduktu {
+  name: string
+  category: string
+  image_url?: string
+  default_shelf_days?: number
+}
+
 // Spiżarnia
 
 export const spizarnia = {
@@ -154,6 +166,7 @@ export const spizarnia = {
   usun: (id: number) => api.delete(`/spizarnia/${id}`),
   skanuj: (barcode: string) => api.get<{ found: boolean; name?: string; category?: string; image_url?: string; default_shelf_days?: number }>(`/produkty/barcode/${barcode}`),
   szukaj: (q: string) => api.get<{ found: boolean; name?: string; category?: string; image_url?: string; default_shelf_days?: number }>('/produkty/szukaj', { params: { q } }),
+  kategoria: (nazwa: string) => api.get<{ kategoria: string; pewnosc: number }>('/produkty/kategoria', { params: { nazwa } }),
 }
 
 // Powiadomienia

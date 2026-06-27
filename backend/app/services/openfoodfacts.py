@@ -8,6 +8,7 @@ from ..models import ProductCache
 
 OFF_URL = "https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
 OFF_SEARCH_URL = "https://world.openfoodfacts.org/api/v2/search"
+OFF_ES_URL = "https://search.openfoodfacts.org/search"
 
 KATEGORIE_MAP = {
     "dairy": "nabiał",
@@ -89,6 +90,101 @@ async def lookup_barcode(barcode: str, session: Session) -> dict | None:
     session.commit()
 
     return {"name": name, "category": category, "image_url": image_url}
+
+
+async def search_suggestions_es(query: str, session: Session | None = None, n: int = 8) -> list[dict]:
+    """Szybki Elasticsearch OFF — 0.1-0.3s, zwraca produkty z obrazkami."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(OFF_ES_URL, params={
+                "q": query,
+                "page_size": n,
+                "fields": "code,product_name_pl,product_name,image_front_small_url,categories_tags",
+            })
+            data = resp.json()
+    except Exception:
+        return []
+
+    results = []
+    to_cache = []
+    for product in data.get("hits", []):
+        name = (
+            product.get("product_name_pl")
+            or product.get("product_name")
+            or ""
+        ).strip()
+        if not name:
+            continue
+        category = _mapuj_kategorie(product.get("categories_tags", []))
+        image_url = product.get("image_front_small_url") or None
+        code = (product.get("code") or "").strip()
+        if session is not None and code and not session.get(ProductCache, code):
+            to_cache.append(ProductCache(
+                barcode=code,
+                name=name,
+                category=category,
+                image_url=image_url,
+                raw_json="{}",
+                fetched_at=datetime.utcnow(),
+            ))
+        results.append({"name": name, "category": category, "image_url": image_url})
+
+    if session is not None and to_cache:
+        for item in to_cache:
+            session.add(item)
+        try:
+            session.commit()
+        except Exception:
+            session.rollback()
+
+    return results
+
+
+async def search_suggestions(query: str, session: Session | None = None, n: int = 8) -> list[dict]:
+    try:
+        async with httpx.AsyncClient(timeout=6.0) as client:
+            resp = await client.get(OFF_SEARCH_URL, params={
+                "search_terms": query,
+                "page_size": n,
+                "fields": "code,product_name,product_name_pl,categories_tags,image_front_small_url,image_url",
+            })
+            data = resp.json()
+    except Exception:
+        return []
+
+    results = []
+    to_cache = []
+    for product in data.get("products", []):
+        name = (
+            product.get("product_name_pl")
+            or product.get("product_name")
+            or ""
+        ).strip()
+        if not name:
+            continue
+        category = _mapuj_kategorie(product.get("categories_tags", []))
+        image_url = product.get("image_front_small_url") or product.get("image_url")
+        code = (product.get("code") or "").strip()
+        if session is not None and code and not session.get(ProductCache, code):
+            to_cache.append(ProductCache(
+                barcode=code,
+                name=name,
+                category=category,
+                image_url=image_url,
+                raw_json=json.dumps(product, ensure_ascii=False)[:4000],
+                fetched_at=datetime.utcnow(),
+            ))
+        results.append({"name": name, "category": category, "image_url": image_url})
+
+    if session is not None and to_cache:
+        for item in to_cache:
+            session.add(item)
+        try:
+            session.commit()
+        except Exception:
+            session.rollback()
+
+    return results
 
 
 async def search_by_name(query: str, session: Session | None = None) -> dict | None:

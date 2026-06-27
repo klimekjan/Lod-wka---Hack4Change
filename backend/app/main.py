@@ -19,6 +19,8 @@ async def lifespan(app: FastAPI):
     init_db()
     from .services.ml.predict import init_models
     init_models()
+    from .services.ml.classify import init_classifier
+    init_classifier()
     from .scheduler import start_scheduler
     start_scheduler()
     yield

@@ -46,12 +46,21 @@ _WAGA_OPAK: dict[str, float] = {
 
 def _szacuj_kg(quantity: float, unit: str, category: str = "inne") -> float:
     u = unit.strip().lower()
+<<<<<<< HEAD
     if u == "kg":   return quantity
     if u == "g":    return quantity * 0.001
     if u == "dag":  return quantity * 0.01
     if u == "l":    return quantity
     if u == "ml":   return quantity * 0.001
     if u == "szt.": return quantity * _WAGA_SZT.get(category, 0.15)
+=======
+    if u == "kg":    return quantity
+    if u == "g":     return quantity * 0.001
+    if u == "dag":   return quantity * 0.01
+    if u == "l":     return quantity
+    if u == "ml":    return quantity * 0.001
+    if u == "szt.":  return quantity * _WAGA_SZT.get(category, 0.15)
+>>>>>>> d8b7f84c556868ea5d68b452bd37c686c5f5dad3
     if u == "opak.": return quantity * _WAGA_OPAK.get(category, 0.30)
     return quantity * 0.15
 
@@ -83,7 +92,10 @@ def pobierz_dashboard(
     kg_uratowane = 0.0
     kg_zmarnowane = 0.0
     kg_oddane = 0.0
+<<<<<<< HEAD
     zl_zaoszcz = 0.0
+=======
+>>>>>>> d8b7f84c556868ea5d68b452bd37c686c5f5dad3
     co2_unikniete = 0.0
     liczba_uratowan = 0
     kg_na_styk = 0.0
@@ -94,7 +106,6 @@ def pobierz_dashboard(
 
         if log.action in ("eaten", "shared"):
             kg_uratowane += kg
-            zl_zaoszcz += kg * cena_f
             co2_unikniete += kg * co2_f
             if log.action == "shared":
                 kg_oddane += kg
@@ -104,10 +115,15 @@ def pobierz_dashboard(
         elif log.action == "wasted":
             kg_zmarnowane += kg
 
+<<<<<<< HEAD
     saved_kg = kg_uratowane
     lost_kg = kg_zmarnowane
     total_kg = saved_kg + lost_kg
     wskaznik = round(100.0 * saved_kg / total_kg, 1) if total_kg > 0 else 0.0
+=======
+    total_kg = kg_uratowane + kg_zmarnowane
+    wskaznik = round(100.0 * kg_uratowane / total_kg, 1) if total_kg > 0 else 0.0
+>>>>>>> d8b7f84c556868ea5d68b452bd37c686c5f5dad3
 
     streak = _oblicz_streak(logi)
     tygodniowe = _dane_tygodniowe(logi, _IMPACT)
@@ -116,7 +132,10 @@ def pobierz_dashboard(
         kg_uratowane=round(kg_uratowane, 2),
         kg_zmarnowane=round(kg_zmarnowane, 2),
         kg_oddane=round(kg_oddane, 2),
+<<<<<<< HEAD
         zl_zaoszczedzone=round(zl_zaoszcz, 2),
+=======
+>>>>>>> d8b7f84c556868ea5d68b452bd37c686c5f5dad3
         co2_unikniete=round(co2_unikniete, 2),
         streak_dni=streak,
         wskaznik_uratowania=wskaznik,

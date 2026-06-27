@@ -2,8 +2,71 @@ import { useState, FormEvent, useCallback, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
-import { spizarnia, wydarzenia as wydarzeniaApi, Produkt } from '../lib/api'
+import { spizarnia, wydarzenia as wydarzeniaApi, Produkt, SugestiaProduktu } from '../lib/api'
 import BarcodeScanner from '../components/BarcodeScanner'
+import ProductAutocomplete from '../components/ProductAutocomplete'
+import { IconProdukt } from '../components/ikony'
+
+// Kolory tła kafelków gdy brak zdjęcia
+const KOLOR_KATEGORII: Record<string, string> = {
+  'nabiał': '#1e3a5f',
+  'mięso surowe': '#4a1a1a',
+  'ryby': '#0f3340',
+  'warzywa twarde': '#14321e',
+  'warzywa liściaste': '#14321e',
+  'owoce': '#3d2000',
+  'pieczywo': '#3d2a00',
+  'jajka': '#3d3000',
+  'napoje': '#0f2a3d',
+  'przetwory': '#2e1a40',
+}
+
+// Shelf life per kategoria (dni) — źródło: tracker branch
+const SHELF_LIFE: Record<string, { lodowka: number; zamrazarka: number }> = {
+  'nabiał':            { lodowka: 10,  zamrazarka: 180 },
+  'mięso surowe':      { lodowka: 3,   zamrazarka: 120 },
+  'ryby':              { lodowka: 3,   zamrazarka: 90  },
+  'warzywa liściaste': { lodowka: 5,   zamrazarka: 12  },
+  'warzywa twarde':    { lodowka: 12,  zamrazarka: 90  },
+  'owoce':             { lodowka: 10,  zamrazarka: 180 },
+  'pieczywo':          { lodowka: 5,   zamrazarka: 60  },
+  'jajka':             { lodowka: 28,  zamrazarka: 180 },
+  'napoje':            { lodowka: 5,   zamrazarka: 180 },
+  'przetwory':         { lodowka: 30,  zamrazarka: 365 },
+  'inne':              { lodowka: 7,   zamrazarka: 90  },
+}
+
+function obliczDateWaznosci(kategoria: string, frozen: boolean): string {
+  const sl = SHELF_LIFE[kategoria] ?? SHELF_LIFE['inne']
+  const dni = frozen ? sl.zamrazarka : sl.lodowka
+  const d = new Date()
+  d.setDate(d.getDate() + dni)
+  return d.toISOString().slice(0, 10)
+}
+
+// Szacowanie wagi per kategoria i jednostkę (dla podpowiedzi wagi przy akcji)
+const _WAGA_SZT: Record<string, number> = {
+  'nabiał': 0.15, 'mięso surowe': 0.20, 'ryby': 0.15, 'warzywa liściaste': 0.12,
+  'warzywa twarde': 0.15, 'owoce': 0.15, 'pieczywo': 0.08, 'jajka': 0.06,
+  'napoje': 0.33, 'przetwory': 0.35, 'inne': 0.15,
+}
+const _WAGA_OPAK: Record<string, number> = {
+  'nabiał': 0.50, 'mięso surowe': 0.35, 'ryby': 0.25, 'warzywa liściaste': 0.20,
+  'warzywa twarde': 0.40, 'owoce': 0.50, 'pieczywo': 0.45, 'jajka': 0.60,
+  'napoje': 0.75, 'przetwory': 0.40, 'inne': 0.30,
+}
+
+function szacujKg(quantity: number, unit: string, category: string): number {
+  const u = unit.trim().toLowerCase()
+  if (u === 'kg')    return quantity
+  if (u === 'g')     return quantity * 0.001
+  if (u === 'dag')   return quantity * 0.01
+  if (u === 'l')     return quantity
+  if (u === 'ml')    return quantity * 0.001
+  if (u === 'szt.')  return quantity * (_WAGA_SZT[category] ?? 0.15)
+  if (u === 'opak.') return quantity * (_WAGA_OPAK[category] ?? 0.30)
+  return quantity * 0.15
+}
 
 const KATEGORIE = [
   'nabiał', 'mięso surowe', 'ryby', 'warzywa liściaste',
@@ -58,9 +121,9 @@ function szacujKgFrontend(quantity: number, unit: string, category: string): num
 
 function kolorDaty(dniDo?: number | null): string {
   if (dniDo === undefined || dniDo === null) return 'bg-grafit-700/80 text-grafit-100'
-  if (dniDo < 0)  return 'bg-red-600/80 text-white'
-  if (dniDo <= 2) return 'bg-orange-500/80 text-white'
-  if (dniDo <= 5) return 'bg-bursztyn-500/80 text-white'
+  if (dniDo < 0)   return 'bg-red-600/80 text-white'
+  if (dniDo <= 2)  return 'bg-orange-500/80 text-white'
+  if (dniDo <= 5)  return 'bg-bursztyn-500/80 text-white'
   if (dniDo <= 10) return 'bg-zielony-600/80 text-white'
   return 'bg-grafit-500/80 text-grafit-100'
 }
@@ -118,6 +181,26 @@ function KafelekProduktu({
     }
   }
 
+  function wybierzAkcje(action: string) {
+    setPendingAction(action)
+    setWeightInput('')
+  }
+
+  function potwierdz() {
+    if (!pendingAction) return
+    const kg = parseFloat(weightInput)
+    onAkcja(pendingAction, isNaN(kg) || kg <= 0 ? undefined : kg)
+    setPendingAction(null)
+    setOtwarty(false)
+  }
+
+  function pomin() {
+    if (!pendingAction) return
+    onAkcja(pendingAction)
+    setPendingAction(null)
+    setOtwarty(false)
+  }
+
   return (
     <div
       className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer select-none bg-grafit-700 transition-all ${
@@ -133,7 +216,12 @@ function KafelekProduktu({
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
       ) : (
-        <div className="w-full h-full bg-grafit-700" />
+        <div
+          className="w-full h-full flex items-center justify-center"
+          style={{ background: KOLOR_KATEGORII[produkt.category] ?? '#26271f' }}
+        >
+          <IconProdukt className="w-10 h-10 opacity-30" />
+        </div>
       )}
 
       {produkt.expires_at && (
@@ -198,9 +286,7 @@ function KafelekProduktu({
           ) : (
             <>
               <p className="text-white text-xs font-semibold text-center">Podaj wagę (opcjonalnie)</p>
-              <p className="text-white/50 text-[10px] text-center">
-                szacunek: ~{szacunek.toFixed(2)} kg
-              </p>
+              <p className="text-white/50 text-[10px] text-center">szacunek: ~{szacunek.toFixed(2)} kg</p>
               <input
                 type="number"
                 step="0.01"
@@ -221,10 +307,7 @@ function KafelekProduktu({
               >
                 Potwierdź
               </button>
-              <button
-                className="text-white/60 text-xs"
-                onClick={pomin}
-              >
+              <button className="text-white/60 text-xs" onClick={pomin}>
                 Pomiń wagę
               </button>
             </>
@@ -301,9 +384,10 @@ export default function Spizarnia() {
       spizarnia.akcja(id, action, undefined, weightKg).then(r => r.data),
     onSuccess: (_data, { action }) => {
       queryClient.invalidateQueries({ queryKey: ['spizarnia'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       setBrakAdresu(false)
       if (action === 'shared') {
-        setAkcjaOk('Wystawiono na wymianę -- produkt jest już na mapie.')
+        setAkcjaOk('Wystawiono na wymianę — produkt jest już na mapie.')
         setTimeout(() => setAkcjaOk(''), 4000)
       }
     },
@@ -388,6 +472,19 @@ export default function Spizarnia() {
     })
   }
 
+  function selectSugestia(s: SugestiaProduktu) {
+    setForm(f => {
+      const cat = s.category || f.category
+      return {
+        ...f,
+        name: s.name,
+        category: cat,
+        imageUrl: s.image_url || f.imageUrl,
+        expiresAt: obliczDateWaznosci(cat, f.frozen),
+      }
+    })
+  }
+
   function toggleZaznaczenie(id: number) {
     setZaznaczone(prev => {
       const next = new Set(prev)
@@ -432,10 +529,7 @@ export default function Spizarnia() {
             >
               {mutacjaPrzekazProdukty.isPending ? 'Zapisuję...' : `Zatwierdź (${zaznaczone.size})`}
             </button>
-            <button
-              className="btn-ghost text-sm py-1.5"
-              onClick={() => navigate('/spolecznosc')}
-            >
+            <button className="btn-ghost text-sm py-1.5" onClick={() => navigate('/spolecznosc')}>
               Anuluj
             </button>
           </div>
@@ -483,9 +577,7 @@ export default function Spizarnia() {
       {brakAdresu && (
         <div className="bg-bursztyn-500/10 border border-bursztyn-500/40 text-bursztyn-400 text-sm px-3 py-2 rounded-lg flex items-center justify-between gap-3">
           <span>Żeby oddać produkt na mapie, najpierw ustaw adres w profilu.</span>
-          <Link to="/ustawienia" className="btn text-xs py-1 px-3 shrink-0">
-            Ustawienia
-          </Link>
+          <Link to="/ustawienia" className="btn text-xs py-1 px-3 shrink-0">Ustawienia</Link>
         </div>
       )}
 
@@ -504,11 +596,10 @@ export default function Spizarnia() {
             )}
             <div className="flex-1">
               <label className="block text-sm font-medium text-grafit-300 mb-1">Nazwa</label>
-              <input
-                className="input"
+              <ProductAutocomplete
                 value={form.name}
-                onChange={e => setField('name', e.target.value)}
-                required
+                onChange={val => setField('name', val)}
+                onSelect={selectSugestia}
                 placeholder="np. Mleko 3,2%"
                 autoFocus
               />
@@ -559,12 +650,10 @@ export default function Spizarnia() {
             >
               <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.frozen ? 'translate-x-5' : 'translate-x-0'}`} />
             </div>
-            <span className="text-sm text-grafit-300">
-              W zamrażarce
-            </span>
+            <span className="text-sm text-grafit-300">W zamrażarce</span>
           </label>
           {mutacjaDodaj.error && (
-            <p className="text-sm text-red-400">Błąd zapisu -- spróbuj ponownie.</p>
+            <p className="text-sm text-red-400">Błąd zapisu — spróbuj ponownie.</p>
           )}
           <div className="flex gap-2">
             <button type="submit" className="btn" disabled={mutacjaDodaj.isPending}>
@@ -587,9 +676,7 @@ export default function Spizarnia() {
       {!isLoading && produkty.length === 0 && (
         <div className="karta text-center py-12">
           <p className="font-medium text-grafit-100">Spiżarnia jest pusta</p>
-          <p className="text-sm text-grafit-400 mt-1">
-            Dodaj produkty ręcznie lub klikając "Skanuj"
-          </p>
+          <p className="text-sm text-grafit-400 mt-1">Dodaj produkty ręcznie lub klikając "Skanuj"</p>
         </div>
       )}
 

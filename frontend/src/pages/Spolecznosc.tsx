@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { spolecznosc, wydarzenia as wydarzeniaApi, auth, spizarnia, Ogloszenie, Wydarzenie, WydarzenieSzczegoly } from '../lib/api'
 import MapaWymiany from '../components/MapaWymiany'
+import { IconProdukt } from '../components/ikony'
 
 const JEDNOSTKI = ['szt.', 'kg', 'g', 'l', 'ml', 'opak.']
 
@@ -217,6 +218,7 @@ export default function Spolecznosc() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [filtrMiasto, setFiltrMiasto] = useState('')
+  const [filtrNazwa, setFiltrNazwa] = useState('')
   const [formularzOtwarty, setFormularzOtwarty] = useState(false)
   const [formularzWydarzenieOtwarty, setFormularzWydarzenieOtwarty] = useState(false)
   const [form, setForm] = useState<FormOgloszenieState>(defaultFormOgloszenie)
@@ -442,7 +444,7 @@ export default function Spolecznosc() {
                     {p.image_url ? (
                       <img src={p.image_url} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 bg-grafit-700" />
                     ) : (
-                      <div className="w-8 h-8 rounded-lg shrink-0 bg-grafit-600 flex items-center justify-center text-sm">🥫</div>
+                      <div className="w-8 h-8 rounded-lg shrink-0 bg-grafit-600 flex items-center justify-center text-grafit-400"><IconProdukt className="w-4 h-4" /></div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-grafit-100 truncate">{p.name}</p>
@@ -509,8 +511,23 @@ export default function Spolecznosc() {
       {zakładka === 'dostepne' && (
         <div className="space-y-3">
           <div className="flex gap-2">
-            <input className="input flex-1" placeholder="Filtruj po mieście..." value={filtrMiasto} onChange={e => setFiltrMiasto(e.target.value)} />
-            {filtrMiasto && <button className="btn-ghost text-sm" onClick={() => setFiltrMiasto('')}>Wyczyść</button>}
+            <input
+              className="input flex-1"
+              placeholder="Szukaj produktu..."
+              value={filtrNazwa}
+              onChange={e => setFiltrNazwa(e.target.value)}
+            />
+            <input
+              className="input w-36"
+              placeholder="Miasto..."
+              value={filtrMiasto}
+              onChange={e => setFiltrMiasto(e.target.value)}
+            />
+            {(filtrNazwa || filtrMiasto) && (
+              <button className="btn-ghost text-sm shrink-0" onClick={() => { setFiltrNazwa(''); setFiltrMiasto('') }}>
+                Wyczyść
+              </button>
+            )}
           </div>
 
           {!filtrMiasto && user?.miasto && (
@@ -521,22 +538,31 @@ export default function Spolecznosc() {
 
           {isLoading && <p className="text-sm text-grafit-400 text-center py-8">Ładowanie...</p>}
 
-          {!isLoading && ogłoszenia.filter(o => o.user_id !== user?.id).length === 0 && (
-            <div className="karta text-center py-10">
-              <p className="font-medium text-grafit-100">Brak ogłoszeń</p>
-              <p className="text-sm text-grafit-400 mt-1">
-                {filtrMiasto ? `Brak dostępnych produktów w: ${filtrMiasto}` : 'Nikt jeszcze nic nie wystawił. Bądź pierwszy!'}
-              </p>
-            </div>
-          )}
-
-          {ogłoszenia.filter(o => o.user_id !== user?.id).map(og => (
-            <KartaOgloszenia key={og.id} og={og} czyMoje={false} userId={user?.id}
-              onZarezerwuj={() => mutacjaRezerwuj.mutate(og.id)}
-              onOdebrane={() => mutacjaOdebrane.mutate(og.id)}
-              onUsun={() => {}}
-              zajety={mutacjaRezerwuj.isPending} />
-          ))}
+          {(() => {
+            const widoczne = ogłoszenia.filter(o =>
+              o.user_id !== user?.id &&
+              (!filtrNazwa || o.item_name.toLowerCase().includes(filtrNazwa.toLowerCase()))
+            )
+            if (!isLoading && widoczne.length === 0) return (
+              <div className="karta text-center py-10">
+                <p className="font-medium text-grafit-100">Brak ogłoszeń</p>
+                <p className="text-sm text-grafit-400 mt-1">
+                  {filtrNazwa
+                    ? `Nikt nie wystawia „${filtrNazwa}"${filtrMiasto ? ` w ${filtrMiasto}` : ''}`
+                    : filtrMiasto
+                      ? `Brak dostępnych produktów w: ${filtrMiasto}`
+                      : 'Nikt jeszcze nic nie wystawił. Bądź pierwszy!'}
+                </p>
+              </div>
+            )
+            return widoczne.map(og => (
+              <KartaOgloszenia key={og.id} og={og} czyMoje={false} userId={user?.id}
+                onZarezerwuj={() => mutacjaRezerwuj.mutate(og.id)}
+                onOdebrane={() => mutacjaOdebrane.mutate(og.id)}
+                onUsun={() => {}}
+                zajety={mutacjaRezerwuj.isPending} />
+            ))
+          })()}
         </div>
       )}
 
