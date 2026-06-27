@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { spolecznosc, wydarzenia as wydarzeniaApi, auth, Ogloszenie, Wydarzenie, WydarzenieSzczegoly } from '../lib/api'
+import { spolecznosc, wydarzenia as wydarzeniaApi, auth, spizarnia, Ogloszenie, Wydarzenie, WydarzenieSzczegoly } from '../lib/api'
 import MapaWymiany from '../components/MapaWymiany'
 
 const JEDNOSTKI = ['szt.', 'kg', 'g', 'l', 'ml', 'opak.']
@@ -218,6 +218,7 @@ export default function Spolecznosc() {
   const [formW, setFormW] = useState<FormWydarzenieState>(defaultFormWydarzenie)
   const [zakładka, setZakładka] = useState<'dostepne' | 'moje' | 'wydarzenia' | 'mapa'>('dostepne')
   const [bladWydarzenie, setBladWydarzenie] = useState('')
+  const [popupSpizarnia, setPopupSpizarnia] = useState(false)
 
   const { data: user } = useQuery({ queryKey: ['user'], queryFn: () => auth.mnie().then(r => r.data) })
   const { data: mojaSpizarnia = [] } = useQuery({

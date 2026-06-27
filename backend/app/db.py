@@ -1,13 +1,11 @@
 from sqlalchemy import text
 from sqlmodel import SQLModel, create_engine, Session
-from sqlalchemy.pool import StaticPool
 
 DATABASE_URL = "sqlite:///./lodowka.db"
 
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
 )
 
 
@@ -21,9 +19,13 @@ _MIGRACJE = {
         ("first_name", "TEXT"),
         ("last_name", "TEXT"),
         ("nick", "TEXT"),
+        ("notify_push", "INTEGER DEFAULT 1"),
+        ("notify_email", "INTEGER DEFAULT 1"),
+        ("notify_days_before", "INTEGER DEFAULT 3"),
+        ("notify_hour", "INTEGER DEFAULT 8"),
     ],
     "share_listings": [("address", "TEXT"), ("lat", "FLOAT"), ("lon", "FLOAT")],
-    "pantry_items": [("event_id", "INTEGER")],
+    "pantry_items": [("event_id", "INTEGER"), ("image_url", "TEXT")],
 }
 
 
