@@ -140,6 +140,22 @@ class KategoriaResponse(BaseModel):
     pewnosc: float
 
 
+# --- Paragony (OCR) ---
+
+class ReceiptProduct(BaseModel):
+    name: str
+    quantity: float
+    price: float
+
+
+class Receipt(BaseModel):
+    shop: Optional[str] = None
+    date: Optional[str] = None
+    currency: Optional[str] = None
+    total: float
+    products: List[ReceiptProduct]
+
+
 # --- Dashboard ---
 
 class DashboardStats(BaseModel):

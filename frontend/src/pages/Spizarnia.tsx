@@ -281,6 +281,8 @@ export default function Spizarnia() {
   const wydarzenieId = wydarzenieIdParam ? parseInt(wydarzenieIdParam, 10) : null
 
   const [formularzOtwarty, setFormularzOtwarty] = useState(false)
+  const [formularzKrok, setFormularzKrok] = useState<'nazwa' | 'szczegoly'>('nazwa')
+  const [klasyfikuje, setKlasyfikuje] = useState(false)
   const [skanerOtwarty, setSkanerOtwarty] = useState(false)
   const [form, setForm] = useState<FormState>(defaultForm)
   const [skanBlad, setSkanBlad] = useState('')
@@ -367,11 +369,24 @@ export default function Spizarnia() {
       }))
       setSkanerOtwarty(false)
       setFormularzOtwarty(true)
+      setFormularzKrok('szczegoly')
     } catch {
       setSkanerOtwarty(false)
       setSkanBlad('Błąd połączenia.')
       setFormularzOtwarty(true)
     }
+  }
+
+  async function handleNazwaConfirm() {
+    if (!form.name.trim()) return
+    setKlasyfikuje(true)
+    try {
+      const res = await spizarnia.kategoria(form.name)
+      const kat = res.data.pewnosc > 0.25 ? res.data.kategoria : form.category
+      setForm(f => ({ ...f, category: kat, expiresAt: obliczDateWaznosci(kat, f.frozen) }))
+    } catch { /* zostaw aktualną kategorię */ }
+    setKlasyfikuje(false)
+    setFormularzKrok('szczegoly')
   }
 
   const handleScan = useCallback((barcode: string) => {
@@ -483,7 +498,7 @@ export default function Spizarnia() {
             </button>
             <button
               className="btn text-sm"
-              onClick={() => { setForm(defaultForm); setSkanBlad(''); setFormularzOtwarty(f => !f) }}
+              onClick={() => { setForm(defaultForm); setSkanBlad(''); setFormularzKrok('nazwa'); setFormularzOtwarty(f => !f) }}
             >
               {formularzOtwarty ? 'Anuluj' : '+ Dodaj'}
             </button>
@@ -516,28 +531,56 @@ export default function Spizarnia() {
         </div>
       )}
 
-      {!trybWyboru && formularzOtwarty && (
-        <form onSubmit={submit} className="karta space-y-3">
-          {!form.imageUrl && (
-            <h2 className="font-semibold text-grafit-100">Nowy produkt</h2>
+      {!trybWyboru && formularzOtwarty && formularzKrok === 'nazwa' && (
+        <div className="karta space-y-3">
+          <h2 className="font-semibold text-grafit-100">Nowy produkt</h2>
+          <div>
+            <label className="block text-sm font-medium text-grafit-300 mb-1">Nazwa produktu</label>
+            <ProductAutocomplete
+              value={form.name}
+              onChange={val => setField('name', val)}
+              onSelect={s => { selectSugestia(s); setFormularzKrok('szczegoly') }}
+              onEnter={handleNazwaConfirm}
+              placeholder="np. Malina, Mleko 3,2%..."
+              autoFocus
+            />
+            <p className="text-xs text-grafit-400 mt-1.5">
+              Wybierz z listy lub wpisz i naciśnij <kbd className="bg-grafit-700 px-1 py-0.5 rounded text-[10px]">Enter</kbd>
+            </p>
+          </div>
+          {klasyfikuje && (
+            <p className="text-xs text-grafit-400 flex items-center gap-2">
+              <span className="inline-block w-3 h-3 border-2 border-grafit-500 border-t-limonka-400 rounded-full animate-spin" />
+              Klasyfikuję kategorię...
+            </p>
           )}
-          <div className="flex items-start gap-3">
-            {form.imageUrl && (
-              <img
-                src={form.imageUrl}
-                alt={form.name}
-                className="w-14 h-14 object-contain rounded-lg border border-grafit-600 shrink-0 mt-5"
-              />
-            )}
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-grafit-300 mb-1">Nazwa</label>
-              <ProductAutocomplete
-                value={form.name}
-                onChange={val => setField('name', val)}
-                onSelect={selectSugestia}
-                placeholder="np. Mleko 3,2%"
-                autoFocus
-              />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="btn-ghost text-sm"
+              onClick={() => { setForm(defaultForm); setFormularzOtwarty(false) }}
+            >
+              Anuluj
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!trybWyboru && formularzOtwarty && formularzKrok === 'szczegoly' && (
+        <form onSubmit={submit} className="karta space-y-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="text-grafit-400 hover:text-grafit-100 text-sm"
+              onClick={() => setFormularzKrok('nazwa')}
+            >
+              ←
+            </button>
+            <div className="flex items-center gap-2 min-w-0">
+              {form.imageUrl && (
+                <img src={form.imageUrl} alt="" className="w-8 h-8 object-contain rounded-md border border-grafit-600 shrink-0" />
+              )}
+              <p className="font-semibold text-grafit-100 truncate">{form.name}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -550,6 +593,7 @@ export default function Spizarnia() {
                 step="0.01"
                 value={form.quantity}
                 onChange={e => setField('quantity', e.target.value)}
+                autoFocus
                 required
               />
             </div>
@@ -597,7 +641,7 @@ export default function Spizarnia() {
             <button
               type="button"
               className="btn-ghost"
-              onClick={() => { setForm(defaultForm); setFormularzOtwarty(false) }}
+              onClick={() => { setForm(defaultForm); setFormularzOtwarty(false); setFormularzKrok('nazwa') }}
             >
               Anuluj
             </button>

@@ -24,11 +24,12 @@ interface Props {
   value: string
   onChange: (val: string) => void
   onSelect: (s: SugestiaProduktu) => void
+  onEnter?: () => void
   placeholder?: string
   autoFocus?: boolean
 }
 
-export default function ProductAutocomplete({ value, onChange, onSelect, placeholder, autoFocus }: Props) {
+export default function ProductAutocomplete({ value, onChange, onSelect, onEnter, placeholder, autoFocus }: Props) {
   const { light } = useTheme()
   const [sugestie, setSugestie] = useState<SugestiaProduktu[]>([])
   const [aktywny, setAktywny] = useState(-1)
@@ -66,6 +67,17 @@ export default function ProductAutocomplete({ value, onChange, onSelect, placeho
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (otwarty && aktywny >= 0) {
+        wybierz(sugestie[aktywny])
+      } else {
+        setOtwarty(false)
+        setAktywny(-1)
+        onEnter?.()
+      }
+      return
+    }
     if (!otwarty || sugestie.length === 0) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -73,9 +85,6 @@ export default function ProductAutocomplete({ value, onChange, onSelect, placeho
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setAktywny(i => Math.max(i - 1, -1))
-    } else if (e.key === 'Enter' && aktywny >= 0) {
-      e.preventDefault()
-      wybierz(sugestie[aktywny])
     } else if (e.key === 'Escape') {
       setOtwarty(false)
       setAktywny(-1)

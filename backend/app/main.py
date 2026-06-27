@@ -11,7 +11,7 @@ load_dotenv()
 
 from .db import init_db
 from .limiter import limiter
-from .routers import auth, pantry, notifications, dashboard, community, produkty, push, recipes, friends, events
+from .routers import auth, pantry, notifications, dashboard, community, produkty, push, recipes, friends, events, receipts
 
 
 @asynccontextmanager
@@ -51,6 +51,7 @@ app.include_router(push.router)
 app.include_router(recipes.router)
 app.include_router(friends.router)
 app.include_router(events.router)
+app.include_router(receipts.router)
 
 
 @app.get("/api/health")
