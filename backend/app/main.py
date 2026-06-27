@@ -32,9 +32,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+_origins = [FRONTEND_URL, "http://localhost:5173", "http://localhost:3000",
+            "https://eatmeapp.pl", "https://www.eatmeapp.pl"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL, "http://localhost:3000"],
+    allow_origins=_origins,
     # Aplikacja uwierzytelnia przez Bearer token w naglowku, nie cookies — credentials zbedne.
     allow_credentials=False,
     allow_methods=["*"],
