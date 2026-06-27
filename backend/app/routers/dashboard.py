@@ -83,7 +83,6 @@ def pobierz_dashboard(
     kg_uratowane = 0.0
     kg_zmarnowane = 0.0
     kg_oddane = 0.0
-    zl_zaoszcz = 0.0
     co2_unikniete = 0.0
     liczba_uratowan = 0
     kg_na_styk = 0.0
@@ -94,7 +93,6 @@ def pobierz_dashboard(
 
         if log.action in ("eaten", "shared"):
             kg_uratowane += kg
-            zl_zaoszcz += kg * cena_f
             co2_unikniete += kg * co2_f
             if log.action == "shared":
                 kg_oddane += kg
@@ -114,7 +112,6 @@ def pobierz_dashboard(
         kg_uratowane=round(kg_uratowane, 2),
         kg_zmarnowane=round(kg_zmarnowane, 2),
         kg_oddane=round(kg_oddane, 2),
-        zl_zaoszczedzone=round(zl_zaoszcz, 2),
         co2_unikniete=round(co2_unikniete, 2),
         streak_dni=streak,
         wskaznik_uratowania=wskaznik,

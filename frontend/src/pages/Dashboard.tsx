@@ -107,15 +107,8 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Zaoszczędzone zł i CO₂ */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="karta text-center">
-              <p className="text-xs font-semibold text-grafit-400 uppercase tracking-wide mb-1">Zaoszczędzone</p>
-              <p className="font-display text-2xl font-semibold text-limonka-400">
-                {data.zl_zaoszczedzone.toLocaleString('pl-PL', { maximumFractionDigits: 0 })}
-              </p>
-              <p className="text-xs text-grafit-400 mt-0.5">zł</p>
-            </div>
+          {/* Zaoszczędzone CO₂ */}
+          <div className="grid grid-cols-1">
             <div className="karta text-center">
               <p className="text-xs font-semibold text-grafit-400 uppercase tracking-wide mb-1">CO₂ uniknięte</p>
               <p className="font-display text-2xl font-semibold text-grafit-100">
