@@ -69,15 +69,23 @@ def _wyslij_email(do: str, temat: str, tresc: str) -> bool:
         return False
 
 
-def sprawdz_terminy(session: Session, tylko_godzina: Optional[int] = None) -> int:
+def sprawdz_terminy(
+    session: Session,
+    tylko_godzina: Optional[int] = None,
+    tylko_user_id: Optional[int] = None,
+) -> int:
     """Sprawdza terminy ważności i wysyła powiadomienia. Zwraca liczbę wysłanych alertów.
 
     `tylko_godzina` — gdy podane, powiadamia tylko userów z `notify_hour == tylko_godzina`
-    (używane przez scheduler odpalany co godzinę). None = wszyscy (ręczny test).
+    (używane przez scheduler odpalany co godzinę). None = wszyscy.
+    `tylko_user_id` — gdy podane, sprawdza tylko tego usera (używane przez endpoint testowy).
     """
     teraz = datetime.utcnow()
     wyslanych = 0
-    users = session.exec(select(User)).all()
+    if tylko_user_id is not None:
+        users = session.exec(select(User).where(User.id == tylko_user_id)).all()
+    else:
+        users = session.exec(select(User)).all()
 
     for user in users:
         if tylko_godzina is not None and user.notify_hour != tylko_godzina:

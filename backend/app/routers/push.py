@@ -68,6 +68,6 @@ def trigger_test(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    """Ręczne wywołanie joba - do testowania podczas devu."""
-    n = sprawdz_terminy(session)
+    """Ręczne wywołanie joba — działa tylko dla bieżącego usera."""
+    n = sprawdz_terminy(session, tylko_user_id=current_user.id)
     return {"status": "ok", "wyslano_alertow": n}
