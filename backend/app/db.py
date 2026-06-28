@@ -1,6 +1,5 @@
 import os
-
-from sqlalchemy import text
+from sqlalchemy import event, text
 from sqlmodel import SQLModel, create_engine, Session
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./lodowka.db")
@@ -9,6 +8,13 @@ engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
 )
+
+
+@event.listens_for(engine, "connect")
+def _set_sqlite_pragma(conn, _):
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute("PRAGMA synchronous=NORMAL")
 
 
 # Kolumny dodane po pierwszym wdrozeniu — create_all nie aktualizuje istniejacych tabel,
