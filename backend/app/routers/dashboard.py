@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
 from typing import List
+from zoneinfo import ZoneInfo
 import os
+
+WARSZAWA = ZoneInfo("Europe/Warsaw")
 
 import pandas as pd
 from fastapi import APIRouter, Depends
@@ -132,7 +135,7 @@ def _oblicz_streak(logi: list) -> int:
         log.logged_at.date() for log in logi if log.action == "wasted"
     }
     streak = 0
-    dzien = datetime.utcnow().date()
+    dzien = datetime.now(WARSZAWA).date()
     while dzien not in dni_z_marnotrawstwem and dzien >= pierwsza_akcja:
         streak += 1
         dzien -= timedelta(days=1)
@@ -140,7 +143,7 @@ def _oblicz_streak(logi: list) -> int:
 
 
 def _dane_tygodniowe(logi: list) -> List[dict]:
-    dni = [(datetime.utcnow() - timedelta(days=i)).date() for i in range(6, -1, -1)]
+    dni = [(datetime.now(WARSZAWA) - timedelta(days=i)).date() for i in range(6, -1, -1)]
     okno = set(dni)
 
     kubelki: dict = {d: {"uratowane": 0.0, "zmarnowane": 0.0} for d in dni}
