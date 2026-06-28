@@ -8,6 +8,8 @@ venv/
 dist/
 build/
 lodowka.db
+lodowka.db-wal
+lodowka.db-shm
 backend/data/training_data.csv
 backend/data/kategorie_training.csv
 # modele są commitowane celowo (demo bez trenowania)
