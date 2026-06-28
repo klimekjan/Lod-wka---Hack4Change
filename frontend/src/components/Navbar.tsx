@@ -143,7 +143,7 @@ function NotificationCenter() {
 
       {otwarty && (
         <div
-          className={`fixed left-1/2 -translate-x-1/2 top-[108px] w-[calc(100vw-1.5rem)] max-w-80 rounded-xl shadow-2xl z-50 overflow-hidden md:absolute md:left-auto md:translate-x-0 md:right-0 md:top-full md:mt-2 md:w-80 ${zamykaniePopupu ? 'animate-slide-down-out' : 'animate-slide-down'}`}
+          className={`fixed left-0 right-0 mx-auto top-14 w-[calc(100vw-1.5rem)] max-w-80 rounded-xl shadow-2xl z-50 overflow-hidden md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-80 md:mx-0 ${zamykaniePopupu ? 'animate-slide-down-out' : 'animate-slide-down'}`}
           style={{
             background: light
               ? 'radial-gradient(ellipse at top right, rgba(239,68,68,0.09) 0%, transparent 55%), radial-gradient(ellipse at bottom left, rgba(239,68,68,0.04) 0%, transparent 50%), #f5f5f3'
