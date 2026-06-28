@@ -2,11 +2,12 @@ import json
 import logging
 import os
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
 
 from ..auth import get_current_user
 from ..db import get_session
+from ..limiter import limiter
 from ..models import PantryItem, RecipeCache, User
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,9 @@ def pobierz(
 
 
 @router.post("/generuj")
+@limiter.limit("5/minute")
 async def generuj(
+    request: Request,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
