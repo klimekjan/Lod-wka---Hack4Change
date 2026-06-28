@@ -14,7 +14,9 @@ class RejestrujRequest(BaseModel):
     nick: Optional[str] = None
 
     @model_validator(mode="after")
-    def nick_wymagany_gdy_adres(self):
+    def waliduj(self):
+        if len(self.haslo) < 6:
+            raise ValueError("Hasło musi mieć co najmniej 6 znaków")
         if self.adres and not self.nick:
             raise ValueError("Nick jest wymagany gdy podajesz adres")
         return self

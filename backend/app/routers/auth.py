@@ -13,7 +13,8 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/rejestruj", response_model=TokenResponse, status_code=201)
-def rejestruj(dane: RejestrujRequest, session: Session = Depends(get_session)):
+@limiter.limit("5/minute")
+def rejestruj(request: Request, dane: RejestrujRequest, session: Session = Depends(get_session)):
     if session.exec(select(User).where(User.email == dane.email)).first():
         raise HTTPException(status_code=400, detail="Nie można zarejestrować konta z podanymi danymi")
     if dane.nick and session.exec(select(User).where(User.nick == dane.nick)).first():

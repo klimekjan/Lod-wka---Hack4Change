@@ -60,9 +60,9 @@ async def generuj(
     from ..services.recipes import generuj_przepisy
     try:
         przepisy = await generuj_przepisy(list(produkty))
-    except Exception as exc:
+    except Exception:
         logger.exception("Błąd generowania przepisów")
-        raise HTTPException(status_code=502, detail=f"Claude API: {exc}")
+        raise HTTPException(status_code=502, detail="Błąd generowania przepisów")
 
     recipes_json = json.dumps(przepisy, ensure_ascii=False)
 
