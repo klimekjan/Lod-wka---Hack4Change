@@ -1,9 +1,14 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 from zoneinfo import ZoneInfo
 import os
 
 WARSZAWA = ZoneInfo("Europe/Warsaw")
+
+
+def _data_warsaw(dt: datetime):
+    """Konwertuje naiwny UTC datetime (z bazy) na datę w strefie Warsaw."""
+    return dt.replace(tzinfo=timezone.utc).astimezone(WARSZAWA).date()
 
 import pandas as pd
 from fastapi import APIRouter, Depends
@@ -130,9 +135,9 @@ def pobierz_dashboard(
 def _oblicz_streak(logi: list) -> int:
     if not logi:
         return 0
-    pierwsza_akcja = min(log.logged_at.date() for log in logi)
+    pierwsza_akcja = min(_data_warsaw(log.logged_at) for log in logi)
     dni_z_marnotrawstwem = {
-        log.logged_at.date() for log in logi if log.action == "wasted"
+        _data_warsaw(log.logged_at) for log in logi if log.action == "wasted"
     }
     streak = 0
     dzien = datetime.now(WARSZAWA).date()
@@ -148,7 +153,7 @@ def _dane_tygodniowe(logi: list) -> List[dict]:
 
     kubelki: dict = {d: {"uratowane": 0.0, "zmarnowane": 0.0} for d in dni}
     for log in logi:
-        d = log.logged_at.date()
+        d = _data_warsaw(log.logged_at)
         if d not in okno:
             continue
         kg = log.weight_kg or _szacuj_kg(log.quantity, log.unit, log.category)

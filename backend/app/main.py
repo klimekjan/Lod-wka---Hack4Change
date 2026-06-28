@@ -31,9 +31,10 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+_extra = [o.strip() for o in os.getenv("EXTRA_ORIGINS", "").split(",") if o.strip()]
 
-_origins = [FRONTEND_URL, "http://localhost:5173", "http://localhost:3000",
-            "https://eatmeapp.pl", "https://www.eatmeapp.pl"]
+_origins = list({FRONTEND_URL, "http://localhost:5173", "http://localhost:3000",
+                 "https://eatmeapp.pl", "https://www.eatmeapp.pl", *_extra})
 
 app.add_middleware(
     CORSMiddleware,

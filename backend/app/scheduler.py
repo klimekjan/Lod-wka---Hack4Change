@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -8,6 +9,8 @@ from sqlmodel import Session
 from .db import engine
 from .services.notifications import sprawdz_terminy
 
+logger = logging.getLogger(__name__)
+
 WARSZAWA = ZoneInfo("Europe/Warsaw")
 scheduler = AsyncIOScheduler(timezone="Europe/Warsaw")
 
@@ -17,7 +20,7 @@ def _job() -> None:
     godzina = datetime.now(WARSZAWA).hour
     with Session(engine) as session:
         n = sprawdz_terminy(session, tylko_godzina=godzina)
-    print(f"[scheduler] godzina {godzina:02d}:00 — sprawdzono terminy, wysłano {n} alertów")
+    logger.info("godzina %02d:00 — sprawdzono terminy, wysłano %d alertów", godzina, n)
 
 
 def start_scheduler() -> None:
