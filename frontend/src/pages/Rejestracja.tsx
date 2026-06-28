@@ -17,6 +17,11 @@ export default function Rejestracja() {
   async function submit(e: FormEvent) {
     e.preventDefault()
     setBlad('')
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+    if (!emailRegex.test(email)) {
+      setBlad('Podaj prawidłowy adres email (np. jan@example.com)')
+      return
+    }
     if (haslo.length < 6) {
       setBlad('Hasło musi mieć co najmniej 6 znaków')
       return
@@ -38,7 +43,11 @@ export default function Rejestracja() {
       localStorage.setItem('token', res.data.access_token)
       navigate('/')
     } catch (err: any) {
-      setBlad(err.response?.data?.detail || 'Błąd rejestracji')
+      const detail = err.response?.data?.detail
+      const msg = Array.isArray(detail)
+        ? (detail[0]?.msg || 'Nieprawidłowe dane rejestracji')
+        : (detail || 'Błąd rejestracji')
+      setBlad(msg)
     } finally {
       setLadowanie(false)
     }
