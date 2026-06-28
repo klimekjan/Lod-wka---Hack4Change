@@ -79,7 +79,10 @@ class ClaudeReceiptService:
             ],
         )
 
-        raw = response.content[0].text
+        text_block = next((b for b in response.content if b.type == "text"), None)
+        if not text_block:
+            raise ValueError("Brak bloku tekstowego w odpowiedzi Claude")
+        raw = text_block.text
         data = _wyodrebnij_json(raw)
 
         # normalizuj products żeby zawsze był lista

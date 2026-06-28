@@ -201,31 +201,31 @@ function KafelekProduktu({
 
       {!trybWyboru && otwarty && (
         <div
-          className="absolute inset-0 bg-black/65 flex flex-col items-center justify-center gap-2 p-2"
+          className="absolute inset-0 bg-black/65 flex flex-col items-center justify-center gap-1.5 p-1.5"
           onClick={e => e.stopPropagation()}
         >
           {pendingAction === null ? (
             <>
               <button
-                className="w-full bg-limonka-400 text-grafit-900 text-xs font-semibold py-1.5 rounded-full active:bg-limonka-500"
+                className="w-full bg-limonka-400 text-grafit-900 text-[10px] font-semibold py-1 rounded-full active:bg-limonka-500"
                 onClick={() => wybierzAkcje('eaten')}
               >
                 Zjedzone
               </button>
               <button
-                className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-full active:bg-white/30"
+                className="w-full bg-white/20 text-white text-[10px] font-semibold py-1 rounded-full active:bg-white/30"
                 onClick={() => wybierzAkcje('wasted')}
               >
                 Wyrzucone
               </button>
               <button
-                className="w-full bg-white/20 text-white text-xs font-semibold py-1.5 rounded-full active:bg-white/30"
+                className="w-full bg-white/20 text-white text-[10px] font-semibold py-1 rounded-full active:bg-white/30"
                 onClick={() => wybierzAkcje('shared')}
               >
                 Oddaj
               </button>
               <button
-                className="mt-1 text-white/60 text-xs"
+                className="text-white/60 text-[10px]"
                 onClick={() => setOtwarty(false)}
               >
                 zamknij
@@ -233,30 +233,26 @@ function KafelekProduktu({
             </>
           ) : (
             <>
-              <p className="text-white text-xs font-semibold text-center">Podaj wagę (opcjonalnie)</p>
-              <p className="text-white/50 text-[10px] text-center">szacunek: ~{szacunek.toFixed(2)} kg</p>
+              <p className="text-white text-[10px] font-semibold text-center leading-tight">Waga (opcj.)</p>
               <input
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder={`np. ${szacunek.toFixed(2)}`}
+                placeholder={`~${szacunek.toFixed(2)}`}
                 value={weightInput}
                 onChange={e => setWeightInput(e.target.value)}
                 onClick={e => e.stopPropagation()}
-                className="w-full text-center bg-white/15 text-white text-sm rounded-lg py-1.5 outline-none placeholder-white/40"
+                className="w-full text-center bg-white/15 text-white text-xs rounded-lg py-1 outline-none placeholder-white/40"
                 autoFocus
               />
-              <p className="text-white/40 text-[9px] text-center -mt-1">
-                Dokładna waga poprawia statystyki Trackera
-              </p>
               <button
-                className="w-full bg-limonka-400 text-grafit-900 text-xs font-semibold py-1.5 rounded-full"
+                className="w-full bg-limonka-400 text-grafit-900 text-[10px] font-semibold py-1 rounded-full"
                 onClick={potwierdz}
               >
-                Potwierdź
+                OK
               </button>
-              <button className="text-white/60 text-xs" onClick={pomin}>
-                Pomiń wagę
+              <button className="text-white/60 text-[10px]" onClick={pomin}>
+                Pomiń
               </button>
             </>
           )}

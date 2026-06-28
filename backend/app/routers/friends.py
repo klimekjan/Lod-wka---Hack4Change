@@ -197,11 +197,13 @@ def wyslij_zaproszenie(
         raise HTTPException(status_code=409, detail="Relacja już istnieje")
     zaproszenie = Friendship(requester_id=current_user.id, addressee_id=user_id)
     session.add(zaproszenie)
+    session.flush()  # potrzebujemy zaproszenie.id przed commitem
     imie_nadawcy = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.nick or current_user.email
     powiadomienie = Notification(
         user_id=user_id,
         type="friend_request",
         message=f"{imie_nadawcy} wysłał(a) Ci zaproszenie do znajomych",
+        item_id=zaproszenie.id,
     )
     session.add(powiadomienie)
     session.commit()
@@ -233,6 +235,7 @@ def akceptuj_zaproszenie(
         select(Notification).where(
             Notification.user_id == current_user.id,
             Notification.type == "friend_request",
+            Notification.item_id == friendship_id,
             Notification.read == False,
         )
     ).first()
@@ -266,6 +269,7 @@ def odrzuc_zaproszenie(
         select(Notification).where(
             Notification.user_id == current_user.id,
             Notification.type == "friend_request",
+            Notification.item_id == friendship_id,
             Notification.read == False,
         )
     ).first()
