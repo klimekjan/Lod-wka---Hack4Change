@@ -1,10 +1,13 @@
 import base64
 import json
+import os
 import re
 
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 
 from ..schemas import Receipt
+
+client = AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
 
 
 def _wykryj_mime(data: bytes) -> str:
@@ -32,14 +35,11 @@ def _wyodrebnij_json(tekst: str) -> dict:
 
 class ClaudeReceiptService:
 
-    def __init__(self):
-        self.client = Anthropic()
-
-    def extract(self, image: bytes) -> Receipt:
+    async def extract(self, image: bytes) -> Receipt:
         mime = _wykryj_mime(image)
         image64 = base64.b64encode(image).decode("utf-8")
 
-        response = self.client.messages.create(
+        response = await client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=2048,
             system=(

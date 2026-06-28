@@ -1,10 +1,12 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from sqlmodel import Session
 
 from ..auth import get_current_user
 from ..db import get_session
 from ..models import User
 from ..services.ocr_llm import ClaudeReceiptService
-from sqlmodel import Session
 
 router = APIRouter(prefix="/api/paragony", tags=["paragony"])
 
@@ -15,9 +17,11 @@ async def zaladuj(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY nie ustawiony")
     image = await file.read()
     try:
         service = ClaudeReceiptService()
-        return service.extract(image)
+        return await service.extract(image)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Błąd odczytu paragonu: {e}")

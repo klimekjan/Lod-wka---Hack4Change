@@ -11,10 +11,25 @@ Crusader Team · Hack4Change · Tematy: Człowiek + Natura + Technologia
 - Wyróżnik #3: "Tinder dla jedzenia" — swipe: zjadłem / oddałem / wyrzuciłem / +3 dni.
 
 ## 2. MODEL BIZNESOWY
-- B2C freemium: apka darmowa; premium = nielimitowane skany AI, statystyki rodzinne, więcej przepisów.
-- B2B retail: integracja ze sklepami — skan paragonu auto-uzupełnia spiżarnię; kupony na produkty blisko terminu.
-- Granty / ESG: banki żywności, gminy, NGO; finansowanie z grantów eko i budżetów ESG firm.
-- Skala bez kosztów: PWA = zero instalacji i zero opłat app store, działa od razu na każdym telefonie.
+
+**Rynek (TAM):** ~14 mln gospodarstw domowych w PL × 3 408 zł marnowanej żywności rocznie
+→ ~48 mld zł marnowanego jedzenia rocznie tylko w domach. Globalny rynek zarządzania
+marnowaniem żywności: 78 mld USD (2024) → 128 mld USD (2033).
+
+**Dowód popytu:** Too Good To Go ma już 4,5 mln użytkowników i 8 100+ partnerów biznesowych
+w samej Polsce — ale ratuje jedzenie tylko ze SKLEPÓW, nie z domu. My zajmujemy tę lukę.
+
+- **B2C freemium** — apka darmowa; premium ~9,99 zł/mc (120 zł/rok): nielimitowane skany AI,
+  statystyki rodzinne, więcej przepisów.
+  → ROI dla usera: jeśli apka ograniczy choćby 1/3 z 3 408 zł marnowanych rocznie = ~1 100 zł
+  zwrotu przy koszcie 120 zł (≈8× zwrot). Konwersja 2–3% bazy = realny przychód.
+- **B2B retail** — SaaS / prowizja: skan paragonu auto-uzupełnia spiżarnię; sklepy
+  (Biedronka, Lidl, Carrefour — już aktywne w tej kategorii) płacą za kupony na produkty
+  blisko terminu i zanonimizowane dane koszyka.
+- **Granty / ESG** — banki żywności, gminy, NGO, projekt PROM; finansowanie z grantów eko
+  (UE, NFOŚiGW) i budżetów ESG firm raportujących redukcję CO₂.
+- **Skala bez kosztów** — PWA = zero instalacji i zero prowizji app store (oszczędność 15–30%
+  Apple/Google), działa od razu na każdym telefonie.
 
 ## 3. IMPACT (konkretne liczby)
 - Każdy uratowany kg liczony per kategoria (11 kategorii) → realne CO₂ i zł.
@@ -26,8 +41,8 @@ Crusader Team · Hack4Change · Tematy: Człowiek + Natura + Technologia
 - Demo na żywo: zdjęcie paragonu → produkty same wpadają do spiżarni → ML pokazuje ryzyko →
   swipe → dashboard rośnie w czasie rzeczywistym.
 - To działający produkt, nie mockup: pełny flow, PWA, dopracowane UI (tryb jasny/ciemny, animacje).
-- Hook na start: "Przeciętna rodzina wyrzuca ~2500 zł jedzenia rocznie. Eat Me pokazuje dokładnie
-  ile i jak to zatrzymać." (liczbę dopasować/zweryfikować)
+- Hook na start: "Statystyczna polska rodzina wyrzuca 3 408 zł jedzenia rocznie — 165 kg do kosza.
+  Eat Me pokazuje dokładnie ile i jak to zatrzymać."
 
 ## 5. ZBIEŻNOŚĆ Z TEMATEM — wszystkie 3
 - NATURA: bezpośrednia redukcja marnowania żywności = mniej CO₂ i odpadów.
